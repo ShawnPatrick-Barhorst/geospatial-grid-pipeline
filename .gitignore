@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+
+# uv
+.cache/
+cache/
+
+# Data — never commit PBFs, rasters, or processed outputs
+data/
+outputs/
+*.pbf
+*.tif
+*.geojson
+
+# Environment variables
+.env
+
+# IDE
+.vscode/settings.json
