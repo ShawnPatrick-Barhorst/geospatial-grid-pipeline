@@ -489,7 +489,7 @@ wheels = [
 [[package]]
 name = "geospatial-grid-pipeline"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "branca" },
     { name = "folium" },
