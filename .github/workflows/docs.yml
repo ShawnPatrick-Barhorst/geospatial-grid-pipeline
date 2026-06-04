@@ -1,0 +1,39 @@
+name: Deploy Sphinx Documentation
+
+on:
+  push:
+    branches:
+      - main  # Adjust if your default branch is master
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build Sphinx Documentation
+        run: |
+          cd docs
+          mkdir -p build/html
+          touch build/html/.nojekyll
+          
+          # This matches the exact pathing setup that just worked on your ThinkPad
+          PYTHONPATH=../gridrisk uv run --with sphinx --with sphinx-rtd-theme sphinx-build -b html source build/html
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs/build/html
+          branch: gh-pages

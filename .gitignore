@@ -21,3 +21,7 @@ outputs/
 
 # IDE
 .vscode/settings.json
+
+# Sphinx documentation build
+docs/build/
+.doctrees/
