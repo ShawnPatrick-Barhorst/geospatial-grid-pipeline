@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_fb8c656db099b5ebe400423b5a28b9ac {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_fb8c656db099b5ebe400423b5a28b9ac" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_fb8c656db099b5ebe400423b5a28b9ac = L.map(
+                "map_fb8c656db099b5ebe400423b5a28b9ac",
+                {
+                    center: [-84.38627777777776, 36.10988888888889],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 10,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_5539fde3922290c3b2661c30216f783a = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_5539fde3922290c3b2661c30216f783a.addTo(map_fb8c656db099b5ebe400423b5a28b9ac);
+        
+    
+
+        function geo_json_1b8a1b5761020b900e1c712fa7311681_onEachFeature(feature, layer) {
+
+            layer.on({
+            });
+        };
+        var geo_json_1b8a1b5761020b900e1c712fa7311681 = L.geoJson(null, {
+                onEachFeature: geo_json_1b8a1b5761020b900e1c712fa7311681_onEachFeature,
+            
+            ...{
+}
+        });
+
+        function geo_json_1b8a1b5761020b900e1c712fa7311681_add (data) {
+            geo_json_1b8a1b5761020b900e1c712fa7311681
+                .addData(data);
+        }
+            geo_json_1b8a1b5761020b900e1c712fa7311681_add({"bbox": [35.218, -84.502, 37.348, -84.298], "features": [{"bbox": [35.802, -84.302, 35.898, -84.298], "geometry": {"coordinates": [[[35.802, -84.302], [35.802, -84.298], [35.898, -84.298], [35.898, -84.302], [35.802, -84.302]]], "type": "Polygon"}, "id": "0", "properties": {"coords": [[35.802, -84.302], [35.802, -84.298], [35.898, -84.298], [35.898, -84.302], [35.802, -84.302]], "id": 1, "name": "sub_1", "node_refs": [1001, 1002, 1003, 1004, 1001], "type": "substation", "voltage": "500000;161000;69000"}, "type": "Feature"}, {"bbox": [35.802, -84.402, 35.898, -84.398], "geometry": {"coordinates": [[[35.802, -84.402], [35.802, -84.398], [35.898, -84.398], [35.898, -84.402], [35.802, -84.402]]], "type": "Polygon"}, "id": "1", "properties": {"coords": [[35.802, -84.402], [35.802, -84.398], [35.898, -84.398], [35.898, -84.402], [35.802, -84.402]], "id": 2, "name": "sub_2", "node_refs": [1005, 1006, 1007, 1008, 1005], "type": "substation", "voltage": "500000;161000"}, "type": "Feature"}, {"bbox": [35.802, -84.502, 35.898, -84.498], "geometry": {"coordinates": [[[35.802, -84.502], [35.802, -84.498], [35.898, -84.498], [35.898, -84.502], [35.802, -84.502]]], "type": "Polygon"}, "id": "2", "properties": {"coords": [[35.802, -84.502], [35.802, -84.498], [35.898, -84.498], [35.898, -84.502], [35.802, -84.502]], "id": 3, "name": "sub_3", "node_refs": [1009, 1010, 1011, 1012, 1009], "type": "substation", "voltage": "161000;69000"}, "type": "Feature"}, {"bbox": [36.852, -84.352, 36.948, -84.348], "geometry": {"coordinates": [[[36.852, -84.352], [36.852, -84.348], [36.948, -84.348], [36.948, -84.352], [36.852, -84.352]]], "type": "Polygon"}, "id": "3", "properties": {"coords": [[36.852, -84.352], [36.852, -84.348], [36.948, -84.348], [36.948, -84.352], [36.852, -84.352]], "id": 4, "name": "sub_4", "node_refs": [1013, 1014, 1015, 1016, 1013], "type": "substation", "voltage": "161000;69000"}, "type": "Feature"}, {"bbox": [36.852, -84.452, 36.948, -84.448], "geometry": {"coordinates": [[[36.852, -84.452], [36.852, -84.448], [36.948, -84.448], [36.948, -84.452], [36.852, -84.452]]], "type": "Polygon"}, "id": "4", "properties": {"coords": [[36.852, -84.452], [36.852, -84.448], [36.948, -84.448], [36.948, -84.452], [36.852, -84.452]], "id": 5, "name": "sub_5", "node_refs": [1017, 1018, 1019, 1020, 1017], "type": "substation", "voltage": "69000"}, "type": "Feature"}, {"bbox": [37.252, -84.352, 37.348, -84.348], "geometry": {"coordinates": [[[37.252, -84.352], [37.252, -84.348], [37.348, -84.348], [37.348, -84.352], [37.252, -84.352]]], "type": "Polygon"}, "id": "5", "properties": {"coords": [[37.252, -84.352], [37.252, -84.348], [37.348, -84.348], [37.348, -84.352], [37.252, -84.352]], "id": 6, "name": "sub_6", "node_refs": [1021, 1022, 1023, 1024, 1021], "type": "substation", "voltage": "161000;69000"}, "type": "Feature"}, {"bbox": [35.218, -84.302, 35.222, -84.298], "geometry": {"coordinates": [[[35.218, -84.302], [35.218, -84.298], [35.222, -84.298], [35.222, -84.302], [35.218, -84.302]]], "type": "Polygon"}, "id": "6", "properties": {"coords": [[35.218, -84.302], [35.218, -84.298], [35.222, -84.298], [35.222, -84.302], [35.218, -84.302]], "id": 7, "name": "gen_1", "node_refs": [1025, 1026, 1027, 1028, 1025], "type": "substation", "voltage": "500000;161000"}, "type": "Feature"}, {"bbox": [35.218, -84.402, 35.222, -84.398], "geometry": {"coordinates": [[[35.218, -84.402], [35.218, -84.398], [35.222, -84.398], [35.222, -84.402], [35.218, -84.402]]], "type": "Polygon"}, "id": "7", "properties": {"coords": [[35.218, -84.402], [35.218, -84.398], [35.222, -84.398], [35.222, -84.402], [35.218, -84.402]], "id": 8, "name": "gen_2", "node_refs": [1029, 1030, 1031, 1032, 1029], "type": "substation", "voltage": "500000;161000"}, "type": "Feature"}, {"bbox": [35.218, -84.502, 35.222, -84.498], "geometry": {"coordinates": [[[35.218, -84.502], [35.218, -84.498], [35.222, -84.498], [35.222, -84.502], [35.218, -84.502]]], "type": "Polygon"}, "id": "8", "properties": {"coords": [[35.218, -84.502], [35.218, -84.498], [35.222, -84.498], [35.222, -84.502], [35.218, -84.502]], "id": 9, "name": "gen_3", "node_refs": [1033, 1034, 1035, 1036, 1033], "type": "substation", "voltage": "500000;161000"}, "type": "Feature"}, {"bbox": [35.22, -84.301, 35.812, -84.301], "geometry": {"coordinates": [[35.22, -84.301], [35.812, -84.301]], "type": "LineString"}, "id": "9", "properties": {"coords": [[35.22, -84.301], [35.812, -84.301]], "id": 501, "name": "Line A - Sub 1", "node_refs": [2001, 2002], "type": "line", "voltage": "500000;161000"}, "type": "Feature"}, {"bbox": [35.22, -84.401, 35.812, -84.401], "geometry": {"coordinates": [[35.22, -84.401], [35.812, -84.401]], "type": "LineString"}, "id": "10", "properties": {"coords": [[35.22, -84.401], [35.812, -84.401]], "id": 502, "name": "Line B - Sub 2", "node_refs": [3001, 3002], "type": "line", "voltage": "500000"}, "type": "Feature"}, {"bbox": [35.22, -84.501, 35.812, -84.501], "geometry": {"coordinates": [[35.22, -84.501], [35.812, -84.501]], "type": "LineString"}, "id": "11", "properties": {"coords": [[35.22, -84.501], [35.812, -84.501]], "id": 503, "name": "Line C - Sub 3", "node_refs": [4001, 4002], "type": "line", "voltage": "161000"}, "type": "Feature"}, {"bbox": [35.85, -84.4, 36.9, -84.35], "geometry": {"coordinates": [[35.85, -84.4], [36.9, -84.35]], "type": "LineString"}, "id": "12", "properties": {"coords": [[35.85, -84.4], [36.9, -84.35]], "id": 504, "name": "Sub2 - Sub4", "node_refs": [5001, 5002], "type": "line", "voltage": "161000"}, "type": "Feature"}, {"bbox": [35.85, -84.5, 36.9, -84.45], "geometry": {"coordinates": [[35.85, -84.5], [36.9, -84.45]], "type": "LineString"}, "id": "13", "properties": {"coords": [[35.85, -84.5], [36.9, -84.45]], "id": 505, "name": "Sub3 - Sub5", "node_refs": [6001, 6002], "type": "line", "voltage": "69000"}, "type": "Feature"}, {"bbox": [35.85, -84.3, 36.3, -84.3], "geometry": {"coordinates": [[35.85, -84.3], [36.3, -84.3]], "type": "LineString"}, "id": "14", "properties": {"coords": [[35.85, -84.3], [36.3, -84.3]], "id": 506, "name": "Sub1 - Intermediate", "node_refs": [7001, 9999], "type": "line", "voltage": "161000;69000"}, "type": "Feature"}, {"bbox": [36.3, -84.45, 36.89, -84.3], "geometry": {"coordinates": [[36.3, -84.3], [36.89, -84.45]], "type": "LineString"}, "id": "15", "properties": {"coords": [[36.3, -84.3], [36.89, -84.45]], "id": 507, "name": "Intermediate - Sub5", "node_refs": [9999, 8001], "type": "line", "voltage": "69000"}, "type": "Feature"}, {"bbox": [36.3, -84.35, 36.89, -84.3], "geometry": {"coordinates": [[36.3, -84.3], [36.89, -84.35]], "type": "LineString"}, "id": "16", "properties": {"coords": [[36.3, -84.3], [36.89, -84.35]], "id": 508, "name": "Intermediate - Sub4", "node_refs": [9999, 8002], "type": "line", "voltage": "161000"}, "type": "Feature"}, {"bbox": [36.91, -84.35, 37.3, -84.35], "geometry": {"coordinates": [[36.91, -84.35], [37.3, -84.35]], "type": "LineString"}, "id": "17", "properties": {"coords": [[36.91, -84.35], [37.3, -84.35]], "id": 509, "name": "Sub4 - Sub6", "node_refs": [10001, 10002], "type": "line", "voltage": "69000"}, "type": "Feature"}], "type": "FeatureCollection"});
+        geo_json_1b8a1b5761020b900e1c712fa7311681.setStyle(function(feature) {return feature.properties.style;});
+
+        
+    
+            geo_json_1b8a1b5761020b900e1c712fa7311681.addTo(map_fb8c656db099b5ebe400423b5a28b9ac);
+        
+</script>
+</html>
