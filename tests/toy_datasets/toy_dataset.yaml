@@ -1,0 +1,208 @@
+substations:
+  - id: 1
+    name: sub_1
+    type: substation
+    voltage: "500000;161000;69000"
+    coords:
+      - (-84.302, 35.802)
+      - (-84.298, 35.802)
+      - (-84.298, 35.898)
+      - (-84.302, 35.898)
+      - (-84.302, 35.802)
+    node_refs: [1001, 1002, 1003, 1004, 1001]
+
+  - id: 2
+    name: sub_2
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.402, 35.802)
+      - (-84.398, 35.802)
+      - (-84.398, 35.898)
+      - (-84.402, 35.898)
+      - (-84.402, 35.802)
+    node_refs: [1005, 1006, 1007, 1008, 1005]
+
+  - id: 3
+    name: sub_3
+    type: substation
+    voltage: "161000;69000"
+    coords:
+      - (-84.502, 35.802)
+      - (-84.498, 35.802)
+      - (-84.498, 35.898)
+      - (-84.502, 35.898)
+      - (-84.502, 35.802)
+    node_refs: [1009, 1010, 1011, 1012, 1009]
+
+  - id: 4
+    name: sub_4
+    type: substation
+    voltage: "161000;69000"
+    coords:
+      - (-84.352, 36.852)
+      - (-84.348, 36.852)
+      - (-84.348, 36.948)
+      - (-84.352, 36.948)
+      - (-84.352, 36.852)
+    node_refs: [1013, 1014, 1015, 1016, 1013]
+
+  - id: 5
+    name: sub_5
+    type: substation
+    voltage: "69000"
+    coords:
+      - (-84.452, 36.852)
+      - (-84.448, 36.852)
+      - (-84.448, 36.948)
+      - (-84.452, 36.948)
+      - (-84.452, 36.852)
+    node_refs: [1017, 1018, 1019, 1020, 1017]
+
+  - id: 6
+    name: sub_6
+    type: substation
+    voltage: "161000;69000"
+    coords:
+      - (-84.352, 37.252)
+      - (-84.348, 37.252)
+      - (-84.348, 37.348)
+      - (-84.352, 37.348)
+      - (-84.352, 37.252)
+    node_refs: [1021, 1022, 1023, 1024, 1021]
+
+  - id: 7
+    name: gen_1
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.302, 35.218)
+      - (-84.298, 35.218)
+      - (-84.298, 35.222)
+      - (-84.302, 35.222)
+      - (-84.302, 35.218)
+    node_refs: [1025, 1026, 1027, 1028, 1025]
+
+  - id: 8
+    name: gen_2
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.402, 35.218)
+      - (-84.398, 35.218)
+      - (-84.398, 35.222)
+      - (-84.402, 35.222)
+      - (-84.402, 35.218)
+    node_refs: [1029, 1030, 1031, 1032, 1029]
+
+  - id: 9
+    name: gen_3
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.502, 35.218)
+      - (-84.498, 35.218)
+      - (-84.498, 35.222)
+      - (-84.502, 35.222)
+      - (-84.502, 35.218)
+    node_refs: [1033, 1034, 1035, 1036, 1033]
+
+powerlines:
+  - id: 501
+    name: "Line A - Sub 1"
+    type: line
+    voltage: "500000;161000"
+    node_refs: [2001, 2002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.301, 35.22)
+        - (-84.301, 35.812)
+
+  - id: 502
+    name: "Line B - Sub 2"
+    type: line
+    voltage: "500000"
+    node_refs: [3001, 3002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.401, 35.22)
+        - (-84.401, 35.812)
+
+  - id: 503
+    name: "Line C - Sub 3"
+    type: line
+    voltage: "161000"
+    node_refs: [4001, 4002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.501, 35.22)
+        - (-84.501, 35.812)
+
+  - id: 504
+    name: "Sub2 - Sub4"
+    type: line
+    voltage: "161000"
+    node_refs: [5001, 5002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.400, 35.850)
+        - (-84.350, 36.900)
+
+  - id: 505
+    name: "Sub3 - Sub5"
+    type: line
+    voltage: "69000"
+    node_refs: [6001, 6002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.500, 35.850)
+        - (-84.450, 36.900)
+
+  - id: 506
+    name: "Sub1 - Intermediate"
+    type: line
+    voltage: "161000;69000"
+    node_refs: [7001, 9999]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.300, 35.850)
+        - (-84.300, 36.300)
+
+  - id: 507
+    name: "Intermediate - Sub5"
+    type: line
+    voltage: "69000"
+    node_refs: [9999, 8001]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.300, 36.300)
+        - (-84.450, 36.890)
+
+  - id: 508
+    name: "Intermediate - Sub4"
+    type: line
+    voltage: "161000"
+    node_refs: [9999, 8002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.300, 36.300)
+        - (-84.350, 36.890)
+
+  - id: 509
+    name: "Sub4 - Sub6"
+    type: line
+    voltage: "69000"
+    node_refs: [10001, 10002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.350, 36.910)
+        - (-84.350, 37.300)
