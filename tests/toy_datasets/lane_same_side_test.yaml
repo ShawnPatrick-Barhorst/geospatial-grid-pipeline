@@ -1,0 +1,132 @@
+# Scenario: one corridor carrying 2 circuits, tapped TWICE from the same side.
+#
+# The mirror of lane_handedness_test. Same corridor, same counts=2, but both
+# branches arrive from the NORTH:
+#
+#   sub_WEST ==2 circuits==> J1 ==> J2 ==2 circuits==> sub_EAST
+#                             |      |
+#                       (from N)     (from N)
+#                             |      |
+#                        sub_NORTH1  sub_NORTH2
+#
+# Expected: both branches splice onto the SAME lane, so sub_NORTH1 and
+# sub_NORTH2 land in the same circuit. Handedness has to be consistent, not
+# merely different - assigning by alternation or by arrival order would pass
+# the opposite-sides test and fail this one.
+
+substations:
+  - id: 701
+    name: sub_WEST
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-84.000, 36.000)
+      - (-83.990, 36.000)
+      - (-83.990, 36.010)
+      - (-84.000, 36.010)
+      - (-84.000, 36.000)
+    node_refs: [50701, 50702, 50703, 50704, 50701]
+
+  - id: 702
+    name: sub_EAST
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.600, 36.000)
+      - (-83.590, 36.000)
+      - (-83.590, 36.010)
+      - (-83.600, 36.010)
+      - (-83.600, 36.000)
+    node_refs: [50705, 50706, 50707, 50708, 50705]
+
+  - id: 703
+    name: sub_NORTH1
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.860, 36.200)
+      - (-83.850, 36.200)
+      - (-83.850, 36.210)
+      - (-83.860, 36.210)
+      - (-83.860, 36.200)
+    node_refs: [50709, 50710, 50711, 50712, 50709]
+
+  - id: 704
+    name: sub_NORTH2
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.760, 36.200)
+      - (-83.750, 36.200)
+      - (-83.750, 36.210)
+      - (-83.760, 36.210)
+      - (-83.760, 36.200)
+    node_refs: [50713, 50714, 50715, 50716, 50713]
+
+powerlines:
+  - id: 921
+    name: "corridor sub_WEST - J1"
+    type: line
+    voltage: "161000"
+    node_refs: [60701, 92101, 62201]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.995, 36.005)
+        - (-83.930, 36.005)
+        - (-83.855, 36.005)
+    counts: 2
+
+  - id: 922
+    name: "corridor J1 - J2"
+    type: line
+    voltage: "161000"
+    node_refs: [62201, 92201, 62202]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.855, 36.005)
+        - (-83.805, 36.005)
+        - (-83.755, 36.005)
+    counts: 2
+
+  - id: 923
+    name: "corridor J2 - sub_EAST"
+    type: line
+    voltage: "161000"
+    node_refs: [62202, 92301, 60702]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.755, 36.005)
+        - (-83.680, 36.005)
+        - (-83.595, 36.005)
+    counts: 2
+
+  # Branch at J1, from the NORTH.
+  - id: 924
+    name: "J1 - sub_NORTH1"
+    type: line
+    voltage: "161000"
+    node_refs: [62201, 92401, 60703]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.855, 36.005)
+        - (-83.855, 36.105)
+        - (-83.855, 36.205)
+    counts: 1
+
+  # Branch at J2, also from the NORTH.
+  - id: 925
+    name: "J2 - sub_NORTH2"
+    type: line
+    voltage: "161000"
+    node_refs: [62202, 92501, 60704]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.755, 36.005)
+        - (-83.755, 36.105)
+        - (-83.755, 36.205)
+    counts: 1

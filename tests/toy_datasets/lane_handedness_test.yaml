@@ -1,0 +1,141 @@
+# Scenario: one corridor carrying 2 circuits, tapped from opposite sides.
+#
+# The corridor runs west->east as a single way with counts=2, so build_strings
+# explodes it into two strands with IDENTICAL geometry (_s0 and _s1). There is
+# no recorded left/right in the data - handedness has to come from the branch
+# bearings.
+#
+#   sub_WEST ==2 circuits==> J1 ==> J2 ==2 circuits==> sub_EAST
+#                             |      |
+#                       (from N)     (from S)
+#                             |      |
+#                        sub_NORTH  sub_SOUTH
+#
+# J1 is tapped by a branch arriving from the NORTH (left of west->east travel).
+# J2 is tapped by a branch arriving from the SOUTH (right of the same).
+#
+# Expected: the two branches splice onto DIFFERENT lanes, so sub_NORTH and
+# sub_SOUTH end up in different circuits. Without handedness both branches
+# attach to every strand at their node, merging the corridor's two circuits and
+# putting both taps on the same one - which would imply the circuits swapped
+# sides between J1 and J2.
+
+substations:
+  - id: 601
+    name: sub_WEST
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-84.000, 36.000)
+      - (-83.990, 36.000)
+      - (-83.990, 36.010)
+      - (-84.000, 36.010)
+      - (-84.000, 36.000)
+    node_refs: [50601, 50602, 50603, 50604, 50601]
+
+  - id: 602
+    name: sub_EAST
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.600, 36.000)
+      - (-83.590, 36.000)
+      - (-83.590, 36.010)
+      - (-83.600, 36.010)
+      - (-83.600, 36.000)
+    node_refs: [50605, 50606, 50607, 50608, 50605]
+
+  - id: 603
+    name: sub_NORTH
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.860, 36.200)
+      - (-83.850, 36.200)
+      - (-83.850, 36.210)
+      - (-83.860, 36.210)
+      - (-83.860, 36.200)
+    node_refs: [50609, 50610, 50611, 50612, 50609]
+
+  - id: 604
+    name: sub_SOUTH
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.760, 35.800)
+      - (-83.750, 35.800)
+      - (-83.750, 35.810)
+      - (-83.760, 35.810)
+      - (-83.760, 35.800)
+    node_refs: [50613, 50614, 50615, 50616, 50613]
+
+powerlines:
+  # Corridor, west leg: sub_WEST -> J1. Two circuits on one structure.
+  - id: 901
+    name: "corridor sub_WEST - J1"
+    type: line
+    voltage: "161000"
+    node_refs: [60601, 90101, 62101]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.995, 36.005)
+        - (-83.930, 36.005)
+        - (-83.855, 36.005)
+    counts: 2
+
+  # Corridor, middle leg: J1 -> J2. Same two circuits, straight through.
+  - id: 902
+    name: "corridor J1 - J2"
+    type: line
+    voltage: "161000"
+    node_refs: [62101, 90201, 62102]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.855, 36.005)
+        - (-83.805, 36.005)
+        - (-83.755, 36.005)
+    counts: 2
+
+  # Corridor, east leg: J2 -> sub_EAST.
+  - id: 903
+    name: "corridor J2 - sub_EAST"
+    type: line
+    voltage: "161000"
+    node_refs: [62102, 90301, 60602]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.755, 36.005)
+        - (-83.680, 36.005)
+        - (-83.595, 36.005)
+    counts: 2
+
+  # Branch at J1, arriving from the NORTH (left side of west->east travel).
+  - id: 904
+    name: "J1 - sub_NORTH"
+    type: line
+    voltage: "161000"
+    node_refs: [62101, 90401, 60603]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.855, 36.005)
+        - (-83.855, 36.105)
+        - (-83.855, 36.205)
+    counts: 1
+
+  # Branch at J2, arriving from the SOUTH (right side of the same travel).
+  - id: 905
+    name: "J2 - sub_SOUTH"
+    type: line
+    voltage: "161000"
+    node_refs: [62102, 90501, 60604]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.755, 36.005)
+        - (-83.755, 35.905)
+        - (-83.755, 35.805)
+    counts: 1

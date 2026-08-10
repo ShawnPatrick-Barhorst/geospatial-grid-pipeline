@@ -1,0 +1,103 @@
+# Scenario: 3 single-circuit lines meeting at node J, all leaving J within a tight
+# ~80 degree fan (bearings 180, 220, 260 degrees -- west, WSW, SSW). Odd strand
+# count = 3 at J, a genuine tap/splice per the user's rule (John Sevier's tap
+# definition: an odd number of circuits meeting at a node means the lines are
+# electrically spliced into one circuit).
+#
+# Because every pairwise angle between the 3 outward-from-J vectors is < 90
+# degrees (all mutually acute -- none is "opposite" any other), the dot_score
+# >= 0.0 filter in build_string_adjacency_list finds ZERO straight/through
+# pairs at J. That means NO edges get added to string_string_adjacency for
+# this node, so sub_A, sub_B, sub_C never get unioned into one circuit group,
+# reproducing the silent-tap-drop bug (topology.py:531-533).
+#
+# Expected (per user's electrical rule, odd count -> splice): sub_A, sub_B,
+# sub_C should all end up in the SAME connected circuit group via node J.
+# Actual (bug): the circuit at J is dropped entirely -- no edges, no shared
+# circuit group, and each substation's strand may not connect to anything.
+
+substations:
+  - id: 401
+    name: sub_A
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.120, 36.150)
+      - (-83.080, 36.150)
+      - (-83.080, 36.170)
+      - (-83.120, 36.170)
+      - (-83.120, 36.150)
+    node_refs: [50401, 50402, 50403, 50404, 50401]
+
+  - id: 402
+    name: sub_B
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.050, 35.955)
+      - (-83.010, 35.955)
+      - (-83.010, 35.975)
+      - (-83.050, 35.975)
+      - (-83.050, 35.955)
+    node_refs: [50405, 50406, 50407, 50408, 50405]
+
+  - id: 403
+    name: sub_C
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-82.870, 35.855)
+      - (-82.830, 35.855)
+      - (-82.830, 35.875)
+      - (-82.870, 35.875)
+      - (-82.870, 35.855)
+    node_refs: [50409, 50410, 50411, 50412, 50409]
+
+powerlines:
+  # sub_A -> J. At J (its end node), the line's outward-from-J tangent points
+  # due west (bearing 180 deg).
+  - id: 951
+    name: "sub_A - J"
+    type: line
+    voltage: "161000"
+    node_refs: [60401, 95101, 95102, 62201]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.100, 36.160)
+        - (-82.950, 36.160)
+        - (-82.850, 36.160)
+        - (-82.800, 36.160)
+    counts: 1
+
+  # J -> sub_B. At J (its start node), the line's outward-from-J tangent
+  # points at bearing 220 deg (WSW).
+  - id: 952
+    name: "J - sub_B"
+    type: line
+    voltage: "161000"
+    node_refs: [62201, 95201, 95202, 60406]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.160)
+        - (-82.915, 36.064)
+        - (-82.985, 35.967)
+        - (-83.030, 35.965)
+    counts: 1
+
+  # J -> sub_C. At J (its start node), the line's outward-from-J tangent
+  # points at bearing 260 deg (SSW).
+  - id: 953
+    name: "J - sub_C"
+    type: line
+    voltage: "161000"
+    node_refs: [62201, 95301, 95302, 60410]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.160)
+        - (-82.826, 36.012)
+        - (-82.852, 35.865)
+        - (-82.850, 35.865)
+    counts: 1

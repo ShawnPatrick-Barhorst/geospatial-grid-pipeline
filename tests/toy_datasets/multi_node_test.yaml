@@ -1,0 +1,165 @@
+# Scenario: A-shaped triangular junction mesh with multi-node polylines.
+#
+# Terminal Topology:
+#   sub_TOP --1,500kV--> J1
+#   sub_TOP --1,500kV--> J1
+#   J1 --1,500kV--> J2          (left leg, upper segment)
+#   J1 --1,500kV--> J3          (right leg, upper segment)
+#   J2 --2,161kV--> J3          (crossbar tying the two legs together)
+#   J2 --3,500;161kV--> sub_LEFT   (left leg, lower segment)
+#   J3 --3,500;161kV--> sub_RIGHT  (right leg, lower segment)
+#
+# Intermediate nodes have been inserted along every powerline corridor
+# to test pipeline multi-node handling and endpoint vector calculation.
+
+substations:
+  - id: 201
+    name: sub_TOP
+    type: substation
+    voltage: "500000"
+    coords:
+      - (-84.302, 36.402)
+      - (-84.298, 36.402)
+      - (-84.298, 36.406)
+      - (-84.302, 36.406)
+      - (-84.302, 36.402)
+    node_refs: [50201, 50202, 50203, 50204, 50201]
+
+  - id: 202
+    name: sub_LEFT
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.402, 36.302)
+      - (-84.398, 36.302)
+      - (-84.398, 36.306)
+      - (-84.402, 36.306)
+      - (-84.402, 36.302)
+    node_refs: [50205, 50206, 50207, 50208, 50205]
+
+  - id: 203
+    name: sub_RIGHT
+    type: substation
+    voltage: "500000;161000"
+    coords:
+      - (-84.202, 36.302)
+      - (-84.198, 36.302)
+      - (-84.198, 36.306)
+      - (-84.202, 36.306)
+      - (-84.202, 36.302)
+    node_refs: [50209, 50210, 50211, 50212, 50209]
+
+powerlines:
+  # Two independent single-circuit 500kV lines from sub_TOP to J1
+  # Line 701: 4 nodes, start=60101, end=62001
+  - id: 701
+    name: "sub_TOP - J1 (line 1)"
+    type: line
+    voltage: "500000"
+    node_refs: [60101, 70101, 70102, 62001]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.301, 36.404)
+        - (-84.301, 36.385)
+        - (-84.301, 36.365)
+        - (-84.301, 36.350)
+    counts: 1
+
+  # Line 702: 4 nodes, start=60102, end=60001
+  - id: 702
+    name: "sub_TOP - J1 (line 2)"
+    type: line
+    voltage: "500000"
+    node_refs: [60102, 70201, 70202, 60001]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.299, 36.404)
+        - (-84.299, 36.385)
+        - (-84.299, 36.365)
+        - (-84.299, 36.350)
+    counts: 1
+
+  # J1 -> J2, left leg upper segment, single 500kV circuit
+  # Line 703: 4 nodes, start=62001, end=60002 (incorporates a small bend)
+  - id: 703
+    name: "J1 - J2"
+    type: line
+    voltage: "500000"
+    node_refs: [62001, 70301, 70302, 60002]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.301, 36.350)
+        - (-84.308, 36.343)
+        - (-84.314, 36.336)
+        - (-84.320, 36.330)
+    counts: 1
+
+  # J1 -> J3, right leg upper segment, single 500kV circuit
+  # Line 704: 4 nodes, start=60001, end=60003
+  - id: 704
+    name: "J1 - J3"
+    type: line
+    voltage: "500000"
+    node_refs: [60001, 70401, 70402, 60003]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.299, 36.350)
+        - (-84.292, 36.343)
+        - (-84.286, 36.336)
+        - (-84.280, 36.330)
+    counts: 1
+
+  # Crossbar: J2 <-> J3, 2 circuits @161kV tying the two legs together
+  # Line 705: 5 nodes, start=60002, end=60003
+  - id: 705
+    name: "J2 - J3"
+    type: line
+    voltage: "161000"
+    node_refs: [60002, 70501, 70502, 70503, 60003]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.320, 36.330)
+        - (-84.310, 36.330)
+        - (-84.300, 36.330)
+        - (-84.290, 36.330)
+        - (-84.280, 36.330)
+    counts: 2
+
+  # J2 -> sub_LEFT, left leg lower segment, mixed voltage, 3 circuits
+  # Line 706: 5 nodes, start=60002, end=60104
+  - id: 706
+    name: "J2 - sub_LEFT"
+    type: line
+    voltage: "500000;161000"
+    node_refs: [60002, 70601, 70602, 70603, 60104]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.320, 36.330)
+        - (-84.340, 36.323)
+        - (-84.360, 36.317)
+        - (-84.380, 36.310)
+        - (-84.400, 36.304)
+    counts: 3
+
+  # J3 -> sub_RIGHT, right leg lower segment, mixed voltage, 3 circuits
+  # Line 707: 5 nodes, start=60003, end=60105
+  - id: 707
+    name: "J3 - sub_RIGHT"
+    type: line
+    voltage: "500000;161000"
+    node_refs: [60003, 70701, 70702, 70703, 60105]
+    geometry:
+      type: LineString
+      coords:
+        - (-84.280, 36.330)
+        - (-84.260, 36.323)
+        - (-84.240, 36.317)
+        - (-84.220, 36.310)
+        - (-84.200, 36.304)
+    counts: 3

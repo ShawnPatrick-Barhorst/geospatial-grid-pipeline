@@ -1,0 +1,161 @@
+# Scenario: John Sevier, Phipps Bend, and Greeneville 3-corridor multi-circuit network.
+#
+# Terminal Topology:
+#   sub_JOHN_SEVIER --1,161kV--> J_TOP             (Top express corridor to Phipps Bend tap)
+#   sub_JOHN_SEVIER --1,161kV--> J_MID             (Middle corridor feeding the 2-way tap bus)
+#   sub_JOHN_SEVIER --1,161kV--> J_BOT             (Bottom direct corridor to Greeneville tap)
+#   J_MID --1,161kV--> J_TOP                       (Upward vertical tie line)
+#   J_MID --1,161kV--> J_BOT                       (Downward vertical tie line)
+#   J_TOP --2,161kV--> sub_PHIPPS_BEND             (2-circuit bundle into Phipps Bend)
+#   J_BOT --2,161kV--> sub_GREENEVILLE             (2-circuit bundle into Greeneville)
+#
+# Note: sub_JOHN_SEVIER has been scaled geographically to encompass all 3 corridor origins.
+
+substations:
+  - id: 101
+    name: sub_JOHN_SEVIER
+    type: substation
+    voltage: "161000"
+    # Scaled footprint spanning latitude 36.160 to 36.420 to center all 3 line origins
+    coords:
+      - (-83.020, 36.150)
+      - (-82.980, 36.150)
+      - (-82.980, 36.420)
+      - (-83.020, 36.420)
+      - (-83.020, 36.150)
+    node_refs: [50101, 60101, 60102, 60103, 50101]
+
+  - id: 102
+    name: sub_PHIPPS_BEND
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-82.710, 36.440)
+      - (-82.690, 36.440)
+      - (-82.690, 36.460)
+      - (-82.710, 36.460)
+      - (-82.710, 36.440)
+    node_refs: [50105, 50106, 60105, 50108, 50105]
+
+  - id: 103
+    name: sub_GREENEVILLE
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-82.710, 36.140)
+      - (-82.690, 36.140)
+      - (-82.690, 36.160)
+      - (-82.710, 36.160)
+      - (-82.710, 36.140)
+    node_refs: [50109, 50110, 60109, 50112, 50109]
+
+powerlines:
+  # Top Line: John Sevier -> J_TOP (1 circuit @ 161kV)
+  # Line 801: 4 nodes, start=60101, end=62001
+  - id: 801
+    name: "sub_JOHN_SEVIER - J_TOP"
+    type: line
+    voltage: "161000"
+    node_refs: [60101, 80101, 80102, 62001]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.000, 36.405)
+        - (-82.930, 36.415)
+        - (-82.860, 36.425)
+        - (-82.800, 36.430)
+    counts: 1
+
+  # Middle Line: John Sevier -> J_MID (1 circuit @ 161kV)
+  # Line 802: 4 nodes, start=60102, end=62002
+  - id: 802
+    name: "sub_JOHN_SEVIER - J_MID"
+    type: line
+    voltage: "161000"
+    node_refs: [60102, 80201, 80202, 62002]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.000, 36.300)
+        - (-82.930, 36.300)
+        - (-82.860, 36.300)
+        - (-82.800, 36.300)
+    counts: 1
+
+  # Bottom Line: John Sevier -> J_BOT (1 circuit @ 161kV)
+  # Line 803: 4 nodes, start=60103, end=62003
+  - id: 803
+    name: "sub_JOHN_SEVIER - J_BOT"
+    type: line
+    voltage: "161000"
+    node_refs: [60103, 80301, 80302, 62003]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.000, 36.200)
+        - (-82.930, 36.190)
+        - (-82.860, 36.180)
+        - (-82.800, 36.170)
+    counts: 1
+
+  # Vertical Slanted Tie: J_MID -> J_TOP (1 circuit @ 161kV)
+  # Line 804: 3 nodes, start=62002, end=62001
+  - id: 804
+    name: "J_MID - J_TOP (Upward Tie)"
+    type: line
+    voltage: "161000"
+    node_refs: [62002, 80401, 62001]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.300)
+        - (-82.800, 36.365)
+        - (-82.800, 36.430)
+    counts: 1
+
+  # Vertical Straight Tie: J_MID -> J_BOT (1 circuit @ 161kV)
+  # Line 805: 3 nodes, start=62002, end=62003
+  - id: 805
+    name: "J_MID - J_BOT (Downward Tie)"
+    type: line
+    voltage: "161000"
+    node_refs: [62002, 80501, 62003]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.300)
+        - (-82.800, 36.235)
+        - (-82.800, 36.170)
+    counts: 1
+
+  # Output Leg 1: J_TOP -> sub_PHIPPS_BEND (2 circuits @ 161kV)
+  # Line 806: 4 nodes, start=62001, end=60105
+  - id: 806
+    name: "J_TOP - sub_PHIPPS_BEND"
+    type: line
+    voltage: "161000"
+    node_refs: [62001, 80601, 80602, 60105]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.430)
+        - (-82.760, 36.438)
+        - (-82.730, 36.445)
+        - (-82.700, 36.454)
+    counts: 2
+
+  # Output Leg 2: J_BOT -> sub_GREENEVILLE (2 circuits @ 161kV)
+  # Line 807: 4 nodes, start=62003, end=60109
+  - id: 807
+    name: "J_BOT - sub_GREENEVILLE"
+    type: line
+    voltage: "161000"
+    node_refs: [62003, 80701, 80702, 60109]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.170)
+        - (-82.760, 36.165)
+        - (-82.730, 36.160)
+        - (-82.700, 36.154)
+    counts: 2

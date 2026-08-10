@@ -2,40 +2,32 @@ import geopandas as gpd
 import yaml
 from shapely.geometry import LineString, Polygon
 
-# Each powerline is represented as a dictionary with the following keys:
-    # 'id': w.id,
-    # 'coords': coords,
-    # 'osm_type': 'way',
-    # 'type': w.tags.get('power'),
-    # 'voltage': w.tags.get('voltage'),
-    # 'tags': dict(w.tags),
-    # 'name': w.tags.get('name'),
-    # 'start_node': w.nodes[0].ref,
-    # 'end_node': w.nodes[-1].ref,
-    # 'geometry': LineString(coords),
-    # 'node_refs': [n.ref for n in w.nodes],
-    # 'cables': w.tags.get('cables')
-
-# Each substation is represented as a dictionary with the following keys
-
-    # 'id': w.id,
-    # 'osm_type': 'way',
-    # 'type': w.tags.get('power'),
-    # 'coords': coords,
-    # 'name': w.tags.get('name'),
-    # 'tags': dict(w.tags),
-    # 'voltage': w.tags.get('voltage'),
-    # 'node_refs': [n.ref for n in w.nodes],
-    # 'geometry': Polygon(coords)
 
 
 def build_toy_data(yaml_path: str) -> gpd.GeoDataFrame:
+    """Builds a hand-written test network from YAML, mimicking OSM ingestion output.
 
+    Lets topology scenarios - taps, splices, parallel circuits - be written by
+    hand and reasoned about, rather than hunted for in real OSM extracts.
+
+    Parameters
+    ----------
+    yaml_path : str
+        Path to a fixture with two top-level keys. 'substations' entries carry
+        'id', 'name', 'type', 'voltage', 'coords', and 'node_refs'; 'powerlines'
+        entries carry those minus 'coords', plus 'counts' and a 'geometry'
+        mapping holding its own 'coords'. Coordinates are '(lon, lat)' strings.
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        Substations and powerlines in one frame, with 'coords' parsed to
+        (lon, lat) tuples and 'geometry' built as Polygons and LineStrings
+        respectively. No CRS is set.
+    """
 
     with open(yaml_path, 'r') as file:
         data = yaml.safe_load(file)
-
-    #gdf = gpd.GeoDataFrame()
 
     # Loop through the YAML file creating substations
     substations = []
@@ -44,7 +36,7 @@ def build_toy_data(yaml_path: str) -> gpd.GeoDataFrame:
         coords = []
         for coord in substation['coords']:
             coord = coord.replace('(', '').replace(')', '')
-            lat, lon = map(float, coord.split(','))
+            lon, lat = map(float, coord.split(','))
             coords.append((lon, lat))
 
         substation['coords'] = coords
@@ -59,7 +51,7 @@ def build_toy_data(yaml_path: str) -> gpd.GeoDataFrame:
         coords = []
         for coord in powerline['geometry']['coords']:
             coord = coord.replace('(', '').replace(')', '')
-            lat, lon = map(float, coord.split(','))
+            lon, lat = map(float, coord.split(','))
             coords.append((lon, lat))
 
         powerline['coords'] = coords
@@ -73,6 +65,3 @@ def build_toy_data(yaml_path: str) -> gpd.GeoDataFrame:
     return gdf_substations
 
 
-
-    
-    

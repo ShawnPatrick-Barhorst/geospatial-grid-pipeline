@@ -1,0 +1,99 @@
+# Scenario: even-degree node where the conductor counts reconcile.
+#
+# sub_A --1 circuit--> J
+# J --2 circuits--> sub_B
+# J --3 circuits--> sub_C
+#
+# Six strands at J from three lines. Line 903 brings exactly half of them, so
+# line identity splits the node 3-vs-3: 903 on one side, 901 + 902 on the other.
+#
+# Expected: the counts reconcile, so every strand continues through and none is
+# left over. No tap. Three conductors arrive and three leave, and the angles
+# only choose which pairs with which - 903 meets the others at a sharp corner,
+# which does not stop them being one conductor apiece running through the node.
+#
+# This fixture was originally written for an "odd strand count = tap" rule that
+# no longer exists, and its header expected a tap here.
+
+substations:
+  - id: 301
+    name: sub_A
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-83.020, 36.150)
+      - (-82.980, 36.150)
+      - (-82.980, 36.170)
+      - (-83.020, 36.170)
+      - (-83.020, 36.150)
+    node_refs: [50301, 50302, 50303, 50304, 50301]
+
+  - id: 302
+    name: sub_B
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-82.720, 36.150)
+      - (-82.680, 36.150)
+      - (-82.680, 36.170)
+      - (-82.720, 36.170)
+      - (-82.720, 36.150)
+    node_refs: [50305, 50306, 50307, 50308, 50305]
+
+  - id: 303
+    name: sub_C
+    type: substation
+    voltage: "161000"
+    coords:
+      - (-82.870, 36.010)
+      - (-82.830, 36.010)
+      - (-82.830, 36.030)
+      - (-82.870, 36.030)
+      - (-82.870, 36.010)
+    node_refs: [50309, 50310, 50311, 50312, 50309]
+
+powerlines:
+  # sub_A -> J (1 circuit), straight line heading east
+  - id: 901
+    name: "sub_A - J"
+    type: line
+    voltage: "161000"
+    node_refs: [60301, 90101, 90102, 62101]
+    geometry:
+      type: LineString
+      coords:
+        - (-83.000, 36.160)
+        - (-82.930, 36.160)
+        - (-82.870, 36.160)
+        - (-82.800, 36.160)
+    counts: 1
+
+  # J -> sub_B (2 circuits), straight continuation east (through-corridor with line 901)
+  - id: 902
+    name: "J - sub_B"
+    type: line
+    voltage: "161000"
+    node_refs: [62101, 90201, 90202, 60306]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.160)
+        - (-82.760, 36.160)
+        - (-82.720, 36.160)
+        - (-82.700, 36.160)
+    counts: 2
+
+  # J -> sub_C (3 circuits), tap heading south from J (not collinear with A-J-B)
+  - id: 903
+    name: "J - sub_C"
+    type: line
+    voltage: "161000"
+    node_refs: [62101, 90301, 90302, 60310]
+    geometry:
+      type: LineString
+      coords:
+        - (-82.800, 36.160)
+        - (-82.815, 36.100)
+        - (-82.830, 36.050)
+        - (-82.850, 36.020)
+    counts: 3

@@ -118,6 +118,7 @@ powerlines:
       coords:
         - (-84.301, 35.22)
         - (-84.301, 35.812)
+    counts: 2
 
   - id: 502
     name: "Line B - Sub 2"
@@ -129,6 +130,7 @@ powerlines:
       coords:
         - (-84.401, 35.22)
         - (-84.401, 35.812)
+    counts: 1
 
   - id: 503
     name: "Line C - Sub 3"
@@ -140,6 +142,7 @@ powerlines:
       coords:
         - (-84.501, 35.22)
         - (-84.501, 35.812)
+    counts: 1
 
   - id: 504
     name: "Sub2 - Sub4"
@@ -151,6 +154,7 @@ powerlines:
       coords:
         - (-84.400, 35.850)
         - (-84.350, 36.900)
+    counts: 1
 
   - id: 505
     name: "Sub3 - Sub5"
@@ -162,6 +166,7 @@ powerlines:
       coords:
         - (-84.500, 35.850)
         - (-84.450, 36.900)
+    counts: 1
 
   - id: 506
     name: "Sub1 - Intermediate"
@@ -173,6 +178,7 @@ powerlines:
       coords:
         - (-84.300, 35.850)
         - (-84.300, 36.300)
+    counts: 2
 
   - id: 507
     name: "Intermediate - Sub5"
@@ -184,6 +190,7 @@ powerlines:
       coords:
         - (-84.300, 36.300)
         - (-84.450, 36.890)
+    counts: 1
 
   - id: 508
     name: "Intermediate - Sub4"
@@ -195,6 +202,7 @@ powerlines:
       coords:
         - (-84.300, 36.300)
         - (-84.350, 36.890)
+    counts: 1
 
   - id: 509
     name: "Sub4 - Sub6"
@@ -206,3 +214,4 @@ powerlines:
       coords:
         - (-84.350, 36.910)
         - (-84.350, 37.300)
+    counts: 1
