@@ -1,27 +1,34 @@
 import osmium as osm
-from shapely.geometry import LineString
+import geopandas as gpd
+from shapely.geometry import LineString, Point
+
 
 
 class PowerHandler(osm.SimpleHandler):
     """Parses an OSM PBF file to extract power infrastructure data.
 
-    Parses an OSM PBF file using PyOsmium's streaming parser to 
-    extract power infrastructure data. It collects nodes and ways with
-    relevant power tags, storing their attributes in structured dictionaries.
+    Uses PyOsmium's streaming parser to collect nodes and ways with relevant
+    power tags, storing their attributes in structured dictionaries.
 
-    Must be applied with locations=True to resolve way node coordinates:
-    handler.apply_file("region.osm.pbf", locations=True)
+    Attributes
+    ----------
+    nodes : list of dict
+        Dictionaries containing attributes of power nodes.
+    ways : list of dict
+        Dictionaries containing attributes of power ways.
 
-    Attributes:
-        nodes: List of dictionaries containing attributes of power nodes.
-        ways: List of dictionaries containing attributes of power ways.
+    Notes
+    -----
+    Must be applied with ``locations=True`` to resolve way node coordinates:
 
-    
-    Example: 
-        >>> handler = PowerHandler()
-        >>> handler.apply_file("tennessee.osm.pbf", locations=True)
-        >>> lines = [w for w in handler.ways if w['type'] == 'line']
-        >>> subs = [w for w in handler.ways if w['type'] == 'substation']
+    >>> handler.apply_file("region.osm.pbf", locations=True)
+
+    Examples
+    --------
+    >>> handler = PowerHandler()
+    >>> handler.apply_file("tennessee.osm.pbf", locations=True)
+    >>> lines = [w for w in handler.ways if w['type'] == 'line']
+    >>> subs = [w for w in handler.ways if w['type'] == 'substation']
     """
 
 
@@ -177,12 +184,14 @@ class PowerHandler(osm.SimpleHandler):
             self.ways.append(
                 {
                     'id': w.id,
-                    'osm_type': 'way',
-                    'type': w.tags.get('power'),
-                    'coords': coords,
                     'name': w.tags.get('name'),
+                    'type': w.tags.get('power'),
+                    'voltage': w.tags.get('voltage'),
+                    'coords': coords,
+                    'node_refs': [n.ref for n in w.nodes],
+                    'osm_type': 'way',
                     'tags': dict(w.tags),
-                    'node_refs': [n.ref for n in w.nodes]
+                    
                 }
             )
 
@@ -190,15 +199,16 @@ class PowerHandler(osm.SimpleHandler):
             self.ways.append(
                 {
                     'id': w.id,
-                    'coords': coords,
-                    'osm_type': 'way',
-                    'type': w.tags.get('power'),
-                    'tags': dict(w.tags),
                     'name': w.tags.get('name'),
-                    'start_node': w.nodes[0].ref,
-                    'end_node': w.nodes[-1].ref,
+                    'type': w.tags.get('power'),
+                    'voltage': w.tags.get('voltage'),
+                    'coords': coords,
+                    'node_refs': [n.ref for n in w.nodes],
                     'geometry': LineString(coords),
-                    'node_refs': [n.ref for n in w.nodes]
+                    'counts': w.tags.get('circuits'),
+                    'cables': w.tags.get('cables'),
+                    'osm_type': 'way',
+                    'tags': dict(w.tags),
                 }
             )
 
@@ -206,15 +216,16 @@ class PowerHandler(osm.SimpleHandler):
             self.ways.append(
                 {
                     'id': w.id,
-                    'coords': coords,
-                    'osm_type': 'way',
-                    'type': w.tags.get('power'),
-                    'tags': dict(w.tags),
                     'name': w.tags.get('name'),
-                    'start_node': w.nodes[0].ref,
-                    'end_node': w.nodes[-1].ref,
+                    'type': w.tags.get('power'),
+                    'voltage': w.tags.get('voltage'),
+                    'coords': coords,
+                    'node_refs': [n.ref for n in w.nodes],
                     'geometry': LineString(coords),
-                    'node_refs': [n.ref for n in w.nodes]
+                    'counts': w.tags.get('circuits'),
+                    'cables': w.tags.get('cables'),
+                    'osm_type': 'way',
+                    'tags': dict(w.tags),
                 }
             )
         
@@ -222,17 +233,61 @@ class PowerHandler(osm.SimpleHandler):
             self.ways.append(
                 {
                     'id': w.id,
-                    'coords': coords,
-                    'osm_type': 'way',
-                    'type': w.tags.get('power'),
-                    'tags': dict(w.tags),
                     'name': w.tags.get('name'),
-                    'start_node': w.nodes[0].ref,
-                    'end_node': w.nodes[-1].ref,
+                    'type': w.tags.get('power'),
+                    'voltage': w.tags.get('voltage'),
+                    'coords': coords,
+                    'node_refs': [n.ref for n in w.nodes],
                     'geometry': LineString(coords),
-                    'node_refs': [n.ref for n in w.nodes]
+                    'counts': w.tags.get('circuits'),
+                    'cables': w.tags.get('cables'),
+                    'osm_type': 'way',
+                    'tags': dict(w.tags),
                 }
             )
 
 
-        
+
+def nodes_to_geodataframe(nodes):
+    """Converts a list of OSM node dictionaries into a GeoDataFrame.
+
+    Parameters
+    ----------
+    nodes : list[dict[str, Any]]
+        A list of dictionaries representing OSM nodes. Each dictionary 
+        must contain ``'lon'`` and ``'lat'`` keys alongside any node attributes.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        A GeoDataFrame with Point geometries in WGS 84 (EPSG:4326) 
+        containing all attributes from the input node dictionaries.
+    """
+    return gpd.GeoDataFrame(
+        nodes,
+        geometry=[Point(node['lon'], node['lat']) for node in nodes],
+        crs='EPSG:4326'
+    )
+
+def ways_to_geodataframe(ways):
+    """Converts a list of OSM way dictionaries into a GeoDataFrame.
+
+    Parameters
+    ----------
+    ways : list[dict[str, Any]]
+        A list of dictionaries representing OSM ways. Each dictionary 
+        must contain a ``'coords'`` key with a sequence of ``(lon, lat)`` 
+        coordinate tuples alongside any way attributes.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        A GeoDataFrame with LineString geometries in WGS 84 (EPSG:4326) 
+        containing all attributes from the input way dictionaries.
+    """
+    return gpd.GeoDataFrame(
+        ways,
+        geometry=[LineString(way['coords']) for way in ways],
+        crs='EPSG:4326'
+    )
+

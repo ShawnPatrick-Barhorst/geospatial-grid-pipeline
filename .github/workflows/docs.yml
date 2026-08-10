@@ -21,16 +21,13 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.13
 
       - name: Build Sphinx Documentation
         run: |
-          cd docs
-          mkdir -p build/html
-          touch build/html/.nojekyll
-          
-          # This matches the exact pathing setup that just worked on your ThinkPad
-          PYTHONPATH=../gridrisk uv run --with sphinx --with sphinx-rtd-theme sphinx-build -b html source build/html
+          mkdir -p docs/build/html
+          touch docs/build/html/.nojekyll
+          uv run --group docs sphinx-build -b html docs/source docs/build/html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

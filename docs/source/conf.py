@@ -3,16 +3,16 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('../../'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../'))
 
 
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'GridRisk'
+project = 'Grid Engine'
 copyright = '2026, Shawn-Patrick Barhorst'
 author = 'Shawn-Patrick Barhorst'
 release = '0.1.0'

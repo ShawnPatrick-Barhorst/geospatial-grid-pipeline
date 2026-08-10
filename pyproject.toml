@@ -5,9 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "geospatial-grid-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "Grid Engine is a data pipeline designed to convert raw OSM data, into a circuit level graph network representation."
 readme = "README.md"
 requires-python = ">=3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = [
     "branca>=0.8.2",
     "folium>=0.20.0",
@@ -20,16 +22,24 @@ dependencies = [
     "osmium>=4.3.1",
     "osmnx>=2.1.0",
     "pandas>=3.0.3",
+    "pygraphviz>=1.14",
     "pyvis>=0.3.2",
     "requests>=2.34.2",
+    "scipy>=1.14.0",
     "shapely>=2.1.2",
 ]
 
 [dependency-groups]
 dev = [
+    "black>=26.5.1",
     "pytest>=9.0.3",
     "ruff>=0.15.14",
 ]
 
+docs = [
+    "sphinx>=8.0",
+    "sphinx-rtd-theme>3.0"
+]
+
 [tool.hatch.build.targets.wheel]
-packages = ["gridrisk"]
+packages = ["grid_engine"]

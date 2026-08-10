@@ -1,10 +1,12 @@
-gridrisk
+grid_engine
 ========
 
 .. toctree::
    :maxdepth: 4
 
-   db
-   graph
+   engine
+   cleaning
+   topology
    ingestion
-   risk
+   graph
+   toy_data
