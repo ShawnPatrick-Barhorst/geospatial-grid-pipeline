@@ -22,7 +22,6 @@ dependencies = [
     "osmium>=4.3.1",
     "osmnx>=2.1.0",
     "pandas>=3.0.3",
-    "pygraphviz>=1.14",
     "pyvis>=0.3.2",
     "requests>=2.34.2",
     "scipy>=1.14.0",
