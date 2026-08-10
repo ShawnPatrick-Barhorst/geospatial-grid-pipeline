@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grid_engine.engine &mdash; Grid Engine 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Grid Engine
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">grid_engine</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Grid Engine</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grid_engine.engine</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grid_engine.engine</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.cleaning</span><span class="w"> </span><span class="kn">import</span> <span class="n">clean_voltages</span><span class="p">,</span> <span class="n">propagate_circuit_counts</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment_ways_at_nodes</span><span class="p">,</span> <span class="n">voltage_splitting</span><span class="p">,</span> <span class="n">get_node_df</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_line_vector</span><span class="p">,</span> <span class="n">build_string_adjacency_list</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_strings</span><span class="p">,</span> <span class="n">build_touches</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_line_substation_connections</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_circuit_terminals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grid_engine.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_networkx_graph</span><span class="p">,</span> <span class="n">view_networkx_graph</span>
+
+<div class="viewcode-block" id="GridEngine">
+<a class="viewcode-back" href="../../engine.html#grid_engine.engine.GridEngine">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GridEngine</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runs the full OSM-to-circuit-graph pipeline and retains its intermediates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lines_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        Transmission corridors from ingestion, requiring &#39;id&#39;, &#39;type&#39;,</span>
+<span class="sd">        &#39;voltage&#39;, &#39;counts&#39;, &#39;node_refs&#39;, &#39;coords&#39;, and &#39;geometry&#39;.</span>
+<span class="sd">    substations_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        Substations, requiring &#39;id&#39; and &#39;geometry&#39;.</span>
+<span class="sd">    m_buffer : int, optional</span>
+<span class="sd">        Search distance in meters for line endpoints that miss a substation,</span>
+<span class="sd">        by default 50.</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Unused, by default False.</span>
+<span class="sd">    voltage_selection : list[int], optional</span>
+<span class="sd">        Voltages to keep after splitting, by default None (keep all).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines_gdf</span><span class="p">,</span> <span class="n">substations_gdf</span><span class="p">,</span> <span class="n">m_buffer</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">voltage_selection</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lines_df</span> <span class="o">=</span> <span class="n">lines_gdf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">substations_gdf</span> <span class="o">=</span> <span class="n">substations_gdf</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">m_buffer</span> <span class="o">=</span> <span class="n">m_buffer</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">networkx_graph</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage_selection</span> <span class="o">=</span> <span class="n">voltage_selection</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">substation_line_adjacency</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string_string_adjacency</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">substation_string_adjacency</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_terminals</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropped_components</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="GridEngine.run">
+<a class="viewcode-back" href="../../engine.html#grid_engine.engine.GridEngine.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes the pipeline, storing the graph and every intermediate on self.</span>
+
+<span class="sd">        Cleans voltages, segments corridors at shared nodes, explodes them by</span>
+<span class="sd">        voltage and circuit count, matches strands into circuits at each node,</span>
+<span class="sd">        attaches substations, and renders the result as a MultiGraph.</span>
+
+<span class="sd">        Inputs are copied, so the caller&#39;s frames are never mutated. Results</span>
+<span class="sd">        land on &#39;networkx_graph&#39;, &#39;circuit_terminals&#39;, and the adjacency</span>
+<span class="sd">        attributes; nothing is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Make a fresh copy so we don&#39;t mutate the user&#39;s raw input data</span>
+        <span class="n">line_gdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">substation_gdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substations_gdf</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># 2. Cleaning &amp; Topology Preprocessing</span>
+        <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">clean_voltages</span><span class="p">)</span>
+        <span class="n">line_gdf</span> <span class="o">=</span> <span class="n">segment_ways_at_nodes</span><span class="p">(</span><span class="n">line_gdf</span><span class="p">)</span>
+        <span class="n">line_gdf</span> <span class="o">=</span> <span class="n">voltage_splitting</span><span class="p">(</span><span class="n">line_gdf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">voltage_selection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">line_gdf</span> <span class="o">=</span> <span class="n">line_gdf</span><span class="p">[</span><span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voltage_selection</span><span class="p">)]</span>
+
+        <span class="n">new_lines_df</span> <span class="o">=</span> <span class="n">propagate_circuit_counts</span><span class="p">(</span><span class="n">line_gdf</span><span class="p">)</span>
+
+        <span class="c1">#TODO: Replace with function that drops lines where all nodes map to the same substation ID (i.e. internal intra-substation lines)</span>
+        <span class="n">new_lines_df</span> <span class="o">=</span> <span class="n">new_lines_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># 3. Strand Explosion &amp; Touch Points</span>
+        <span class="n">strings</span> <span class="o">=</span> <span class="n">build_strings</span><span class="p">(</span><span class="n">new_lines_df</span><span class="p">)</span>
+        <span class="n">touches</span> <span class="o">=</span> <span class="n">build_touches</span><span class="p">(</span><span class="n">strings</span><span class="p">)</span>
+        <span class="n">touches</span> <span class="o">=</span> <span class="n">touches</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">get_line_vector</span><span class="p">(</span><span class="n">new_lines_df</span><span class="p">),</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">string_edges</span><span class="p">,</span> <span class="n">tap_edges</span> <span class="o">=</span> <span class="n">build_string_adjacency_list</span><span class="p">(</span><span class="n">touches</span><span class="p">)</span>
+
+        <span class="c1"># 4. Substation Connections</span>
+        <span class="n">substation_line_adjacency</span> <span class="o">=</span> <span class="n">extract_line_substation_connections</span><span class="p">(</span>
+            <span class="n">new_lines_df</span><span class="p">,</span> 
+            <span class="n">substation_gdf</span><span class="p">,</span> 
+            <span class="n">m_buffer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m_buffer</span>
+        <span class="p">)</span>
+
+        <span class="n">touches</span><span class="p">[</span><span class="s1">&#39;substation_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">touches</span><span class="p">[</span><span class="s1">&#39;node&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">substation_line_adjacency</span><span class="p">)</span>
+        <span class="n">substation_touches</span> <span class="o">=</span> <span class="n">touches</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;substation_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Int64 round-trip, not a bare .replace(&#39;.0&#39;, ...) - that is unanchored</span>
+        <span class="c1"># and would corrupt any id containing &#39;.0&#39; mid-string.</span>
+        <span class="n">substation_touches</span><span class="p">[</span><span class="s1">&#39;substation_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">substation_touches</span><span class="p">[</span><span class="s1">&#39;substation_id&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;Int64&#39;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+        <span class="n">substation_string_adjacency</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="n">substation_touches</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">],</span> <span class="n">substation_touches</span><span class="p">[</span><span class="s1">&#39;substation_id&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
+
+
+        <span class="c1"># 5. Resolve circuits and their terminals (substations AND taps)</span>
+        <span class="n">circuit_terminals</span> <span class="o">=</span> <span class="n">build_circuit_terminals</span><span class="p">(</span>
+            <span class="n">strings</span><span class="p">,</span>
+            <span class="n">string_edges</span><span class="p">,</span>
+            <span class="n">tap_edges</span><span class="p">,</span>
+            <span class="n">substation_string_adjacency</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 6. Render the graph</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">build_networkx_graph</span><span class="p">(</span><span class="n">circuit_terminals</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">networkx_graph</span> <span class="o">=</span> <span class="n">G</span>
+
+        <span class="c1"># 7. Store intermediates for inspection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">substation_line_adjacency</span> <span class="o">=</span> <span class="n">substation_line_adjacency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string_string_adjacency</span> <span class="o">=</span> <span class="n">string_edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tap_edges</span> <span class="o">=</span> <span class="n">tap_edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">substation_string_adjacency</span> <span class="o">=</span> <span class="n">substation_string_adjacency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_terminals</span> <span class="o">=</span> <span class="n">circuit_terminals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropped_components</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dropped_components&#39;</span><span class="p">,</span> <span class="p">[])</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">view</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">view_networkx_graph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">networkx_graph</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Shawn-Patrick Barhorst.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

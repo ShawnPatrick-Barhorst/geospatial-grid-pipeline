@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grid_engine.backends.local.graph &mdash; Grid Engine 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Grid Engine
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">grid_engine</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Grid Engine</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grid_engine.backends.local.graph</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grid_engine.backends.local.graph</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+
+
+
+<div class="viewcode-block" id="build_networkx_graph">
+<a class="viewcode-back" href="../../../../graph.html#grid_engine.graph.build_networkx_graph">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_networkx_graph</span><span class="p">(</span><span class="n">circuit_terminals</span><span class="p">,</span> <span class="n">substation_attrs</span><span class="o">=</span><span class="p">{},</span> <span class="n">tap_attrs</span><span class="o">=</span><span class="p">{})</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiGraph</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Renders circuit terminals into a NetworkX MultiGraph modeling electrical connectivity.</span>
+
+<span class="sd">    Direct edges connect 2-substation circuits; circuits with 3+ substations </span>
+<span class="sd">    use a central tap node. Components with &lt;2 substations are logged in </span>
+<span class="sd">    ``G.graph[&#39;dropped_components&#39;]``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    circuit_terminals : pandas.DataFrame</span>
+<span class="sd">        Circuit records containing &#39;component_id&#39;, &#39;terminals&#39;, and optional &#39;tap&#39;.</span>
+<span class="sd">    substation_attrs : dict, optional</span>
+<span class="sd">        Extra attributes keyed by substation ID, by default {}</span>
+<span class="sd">    tap_attrs : dict, optional</span>
+<span class="sd">        Extra attributes keyed by tap ID, by default {}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    networkx.MultiGraph</span>
+<span class="sd">        Graph with &#39;substation&#39; and &#39;tap&#39; nodes connected by circuit edges.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiGraph</span><span class="p">()</span>
+    <span class="n">dropped</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">circuit_terminals</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">):</span>
+        <span class="n">component_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;component_id&#39;</span><span class="p">]</span>
+        <span class="n">substations</span> <span class="o">=</span> <span class="p">[</span><span class="n">tid</span> <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;terminals&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;substation&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Check for NaN, None, etc</span>
+        <span class="n">tap_id</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tap&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tap_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">tap_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Record dead ends for down-stream analysis</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">substations</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">dropped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">component_id</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">base</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="n">component_id</span><span class="p">,</span>
+            <span class="s1">&#39;circuit&#39;</span><span class="p">:</span> <span class="n">component_id</span><span class="p">,</span>
+            <span class="s1">&#39;voltage&#39;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;voltage&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;strands&#39;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;strands&#39;</span><span class="p">,</span> <span class="p">()),</span>
+            <span class="s1">&#39;n_strands&#39;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;n_strands&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">substation_id</span> <span class="ow">in</span> <span class="n">substations</span><span class="p">:</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
+                <span class="n">substation_id</span><span class="p">,</span>
+                <span class="n">node_type</span><span class="o">=</span><span class="s1">&#39;substation&#39;</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">substation_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">substation_id</span><span class="p">,</span> <span class="p">{}),</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tap_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">substations</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">component_id</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="s1">&#39;direct&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">base</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Add Tap Nodes explicitly</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
+            <span class="n">tap_id</span><span class="p">,</span>
+            <span class="n">node_type</span><span class="o">=</span><span class="s1">&#39;tap&#39;</span><span class="p">,</span>
+            <span class="n">circuit</span><span class="o">=</span><span class="n">component_id</span><span class="p">,</span>
+            <span class="n">voltage</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;voltage&#39;</span><span class="p">),</span>
+            <span class="n">junctions</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;junctions&#39;</span><span class="p">,</span> <span class="p">()),</span>
+            <span class="o">**</span><span class="n">tap_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tap_id</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">substation_id</span> <span class="ow">in</span> <span class="n">substations</span><span class="p">:</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span>
+                <span class="n">tap_id</span><span class="p">,</span> <span class="n">substation_id</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component_id</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">substation_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">shape</span><span class="o">=</span><span class="s1">&#39;tap&#39;</span><span class="p">,</span> <span class="n">hub</span><span class="o">=</span><span class="n">tap_id</span><span class="p">,</span> <span class="o">**</span><span class="n">base</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="n">G</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s1">&#39;dropped_components&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dropped</span>
+    <span class="k">return</span> <span class="n">G</span></div>
+
+
+
+
+<span class="c1">#TODO(AI Placeholder): Replace this function with something that actually looks nice and is clean. Really only useable for test cases.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">view_networkx_graph</span><span class="p">(</span><span class="n">G</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiGraph</span><span class="p">):</span>
+    <span class="c1"># 1. Compute node positions using spring_layout</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+    <span class="c1"># 2. Draw nodes first, keeping taps visually distinct from substations</span>
+    <span class="n">taps</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;node_type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;tap&quot;</span><span class="p">]</span>
+    <span class="n">substations</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">taps</span><span class="p">)]</span>
+
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span>
+        <span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">substations</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">node_color</span><span class="o">=</span><span class="s2">&quot;mediumseagreen&quot;</span><span class="p">,</span> <span class="n">node_shape</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span>
+        <span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">taps</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+        <span class="n">node_color</span><span class="o">=</span><span class="s2">&quot;darkorange&quot;</span><span class="p">,</span> <span class="n">node_shape</span><span class="o">=</span><span class="s2">&quot;^&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_labels</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+
+    <span class="c1"># 3. Group multi-edges between the same node pairs</span>
+    <span class="c1"># We need to assign a unique arc radius to each edge key</span>
+    <span class="n">edge_groups</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># Ensure (u, v) and (v, u) share the same group key</span>
+        <span class="n">pair</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">pair</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edge_groups</span><span class="p">:</span>
+            <span class="n">edge_groups</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">edge_groups</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="c1"># 4. Draw edges with dynamic curvature based on their index</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">keys</span> <span class="ow">in</span> <span class="n">edge_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">num_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+            <span class="c1"># If there&#39;s only 1 edge, draw a straight line (rad = 0.0)</span>
+            <span class="k">if</span> <span class="n">num_edges</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">rad</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Spread radii symmetrically: e.g., -0.2, 0.2 or -0.3, 0.0, 0.3</span>
+                <span class="n">rad</span> <span class="o">=</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="p">(</span><span class="n">num_edges</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+            <span class="c1"># Get edge attributes (like voltage for color). Voltage arrives as</span>
+            <span class="c1"># integer volts from clean_voltages, not a &quot;500kV&quot; style string.</span>
+            <span class="n">edge_data</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">voltage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">edge_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;voltage&quot;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="n">voltage</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;darkred&quot;</span> <span class="k">if</span> <span class="n">voltage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">voltage</span> <span class="o">&gt;=</span> <span class="mi">500000</span> <span class="k">else</span> <span class="s2">&quot;steelblue&quot;</span>
+
+            <span class="c1"># Draw this specific edge with its unique curve radius</span>
+            <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span>
+                <span class="n">G</span><span class="p">,</span>
+                <span class="n">pos</span><span class="p">,</span>
+                <span class="n">edgelist</span><span class="o">=</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)],</span>
+                <span class="n">edge_color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">width</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span>
+                <span class="n">connectionstyle</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;arc3, rad=</span><span class="si">{</span><span class="n">rad</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Shawn-Patrick Barhorst.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

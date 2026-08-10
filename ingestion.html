@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ingestion package &mdash; GridRisk 0.1.0 documentation</title>
+  <title>ingestion module &mdash; Grid Engine 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
@@ -19,8 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="risk package" href="risk.html" />
-    <link rel="prev" title="graph package" href="graph.html" /> 
+    <link rel="next" title="graph module" href="graph.html" />
+    <link rel="prev" title="topology module" href="topology.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            GridRisk
+            Grid Engine
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -44,47 +44,22 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gridrisk</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="db.html">db package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html">graph package</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">ingestion package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion.build_toy_data">ingestion.build_toy_data module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.build_toy_data.build_toy_data"><code class="docutils literal notranslate"><span class="pre">build_toy_data()</span></code></a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">grid_engine</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="engine.html">engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleaning.html">cleaning module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html">topology module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ingestion module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.ingestion.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grid_engine.ingestion.PowerHandler.nodes"><code class="docutils literal notranslate"><span class="pre">PowerHandler.nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grid_engine.ingestion.PowerHandler.ways"><code class="docutils literal notranslate"><span class="pre">PowerHandler.ways</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion.cleaning">ingestion.cleaning module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.cleaning.clean_voltages"><code class="docutils literal notranslate"><span class="pre">clean_voltages()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.cleaning.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.cleaning.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.cleaning.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.ingestion.nodes_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">nodes_to_geodataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.ingestion.ways_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">ways_to_geodataframe()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion.filter_voltages">ingestion.filter_voltages module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.filter_voltages.filter_voltages"><code class="docutils literal notranslate"><span class="pre">filter_voltages()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.filter_voltages.parse_min_voltage"><code class="docutils literal notranslate"><span class="pre">parse_min_voltage()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion.handler_to_geodataframe">ingestion.handler_to_geodataframe module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.handler_to_geodataframe.nodes_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">nodes_to_geodataframe()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.handler_to_geodataframe.ways_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">ways_to_geodataframe()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion.osm_handler">ingestion.osm_handler module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.osm_handler.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-ingestion">Module contents</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.clean_voltages"><code class="docutils literal notranslate"><span class="pre">clean_voltages()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#ingestion.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="risk.html">risk package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph.html">graph module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="toy_data.html">toy_data module</a></li>
 </ul>
 </li>
 </ul>
@@ -95,7 +70,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">GridRisk</a>
+          <a href="index.html">Grid Engine</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -103,8 +78,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">gridrisk</a></li>
-      <li class="breadcrumb-item active">ingestion package</li>
+          <li class="breadcrumb-item"><a href="modules.html">grid_engine</a></li>
+      <li class="breadcrumb-item active">ingestion module</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/ingestion.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -114,227 +89,99 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="ingestion-package">
-<h1>ingestion package<a class="headerlink" href="#ingestion-package" title="Link to this heading"></a></h1>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
-</section>
-<section id="module-ingestion.build_toy_data">
-<span id="ingestion-build-toy-data-module"></span><h2>ingestion.build_toy_data module<a class="headerlink" href="#module-ingestion.build_toy_data" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.build_toy_data.build_toy_data">
-<span class="sig-prename descclassname"><span class="pre">ingestion.build_toy_data.</span></span><span class="sig-name descname"><span class="pre">build_toy_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yaml_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/ingestion/build_toy_data.html#build_toy_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.build_toy_data.build_toy_data" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
-<section id="module-ingestion.cleaning">
-<span id="ingestion-cleaning-module"></span><h2>ingestion.cleaning module<a class="headerlink" href="#module-ingestion.cleaning" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.cleaning.clean_voltages">
-<span class="sig-prename descclassname"><span class="pre">ingestion.cleaning.</span></span><span class="sig-name descname"><span class="pre">clean_voltages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/cleaning.html#clean_voltages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.cleaning.clean_voltages" title="Link to this definition"></a></dt>
-<dd><p>Cleans and standardizes voltage values from the OSM data. OSM voltage tags can be inconsistent, containing multiple values, units, or non-numeric characters. This function extracts numeric voltage values, converts them to a consistent unit (volts), and returns a list of voltages for each powerline.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>v</strong> (<em>_type_</em>) – The raw voltage value from the OSM data, which can be a string with multiple values and units, a single numeric value, or None.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A list of cleaned voltage values in volts, or None if the input is invalid or missing. For example, an input of “10kV; 20kV” would return [10000, 20000], while an input of “15kV” would return [15000]. An input of None or an empty string would return None.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>_type_</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.cleaning.extract_line_substation_connections">
-<span class="sig-prename descclassname"><span class="pre">ingestion.cleaning.</span></span><span class="sig-name descname"><span class="pre">extract_line_substation_connections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substation_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/ingestion/cleaning.html#extract_line_substation_connections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.cleaning.extract_line_substation_connections" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.cleaning.segment_ways_at_nodes">
-<span class="sig-prename descclassname"><span class="pre">ingestion.cleaning.</span></span><span class="sig-name descname"><span class="pre">segment_ways_at_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/ingestion/cleaning.html#segment_ways_at_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.cleaning.segment_ways_at_nodes" title="Link to this definition"></a></dt>
-<dd><p>Splits powerlines into segments at nodes that are shared with other lines. This is important for accurately modeling the grid and identifying grid connectivity.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A new GeoDataFrame with powerlines split into segments at shared nodes.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>GeoDataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.cleaning.voltage_splitting">
-<span class="sig-prename descclassname"><span class="pre">ingestion.cleaning.</span></span><span class="sig-name descname"><span class="pre">voltage_splitting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/ingestion/cleaning.html#voltage_splitting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.cleaning.voltage_splitting" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
-<section id="module-ingestion.filter_voltages">
-<span id="ingestion-filter-voltages-module"></span><h2>ingestion.filter_voltages module<a class="headerlink" href="#module-ingestion.filter_voltages" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.filter_voltages.filter_voltages">
-<span class="sig-prename descclassname"><span class="pre">ingestion.filter_voltages.</span></span><span class="sig-name descname"><span class="pre">filter_voltages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ways</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">69000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/filter_voltages.html#filter_voltages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.filter_voltages.filter_voltages" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.filter_voltages.parse_min_voltage">
-<span class="sig-prename descclassname"><span class="pre">ingestion.filter_voltages.</span></span><span class="sig-name descname"><span class="pre">parse_min_voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voltage_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/filter_voltages.html#parse_min_voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.filter_voltages.parse_min_voltage" title="Link to this definition"></a></dt>
-<dd><p>Extract the minimum voltage from a potentially multi-value string</p>
-</dd></dl>
-
-</section>
-<section id="module-ingestion.handler_to_geodataframe">
-<span id="ingestion-handler-to-geodataframe-module"></span><h2>ingestion.handler_to_geodataframe module<a class="headerlink" href="#module-ingestion.handler_to_geodataframe" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.handler_to_geodataframe.nodes_to_geodataframe">
-<span class="sig-prename descclassname"><span class="pre">ingestion.handler_to_geodataframe.</span></span><span class="sig-name descname"><span class="pre">nodes_to_geodataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/handler_to_geodataframe.html#nodes_to_geodataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.handler_to_geodataframe.nodes_to_geodataframe" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.handler_to_geodataframe.ways_to_geodataframe">
-<span class="sig-prename descclassname"><span class="pre">ingestion.handler_to_geodataframe.</span></span><span class="sig-name descname"><span class="pre">ways_to_geodataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ways</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/handler_to_geodataframe.html#ways_to_geodataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.handler_to_geodataframe.ways_to_geodataframe" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
-<section id="module-ingestion.osm_handler">
-<span id="ingestion-osm-handler-module"></span><h2>ingestion.osm_handler module<a class="headerlink" href="#module-ingestion.osm_handler" title="Link to this heading"></a></h2>
+  <section id="module-grid_engine.ingestion">
+<span id="ingestion-module"></span><h1>ingestion module<a class="headerlink" href="#module-grid_engine.ingestion" title="Link to this heading"></a></h1>
+<p>Public API Gateway for ingestion functions.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="ingestion.osm_handler.PowerHandler">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ingestion.osm_handler.</span></span><span class="sig-name descname"><span class="pre">PowerHandler</span></span><a class="reference internal" href="_modules/ingestion/osm_handler.html#PowerHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.osm_handler.PowerHandler" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="grid_engine.ingestion.PowerHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">grid_engine.ingestion.</span></span><span class="sig-name descname"><span class="pre">PowerHandler</span></span><a class="reference internal" href="_modules/grid_engine/backends/local/ingestion.html#PowerHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.ingestion.PowerHandler" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SimpleHandler</span></code></p>
 <p>Parses an OSM PBF file to extract power infrastructure data.</p>
-<p>Parses an OSM PBF file using PyOsmium’s streaming parser to
-extract power infrastructure data. It collects nodes and ways with
-relevant power tags, storing their attributes in structured dictionaries.</p>
-<p>Must be applied with locations=True to resolve way node coordinates:
-handler.apply_file(“region.osm.pbf”, locations=True)</p>
+<p>Uses PyOsmium’s streaming parser to collect nodes and ways with relevant
+power tags, storing their attributes in structured dictionaries.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="ingestion.osm_handler.PowerHandler.nodes">
-<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ingestion.osm_handler.PowerHandler.nodes" title="Link to this definition"></a></dt>
-<dd><p>List of dictionaries containing attributes of power nodes.</p>
+<dt class="sig sig-object py" id="grid_engine.ingestion.PowerHandler.nodes">
+<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#grid_engine.ingestion.PowerHandler.nodes" title="Link to this definition"></a></dt>
+<dd><p>Dictionaries containing attributes of power nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="ingestion.osm_handler.PowerHandler.ways">
-<span class="sig-name descname"><span class="pre">ways</span></span><a class="headerlink" href="#ingestion.osm_handler.PowerHandler.ways" title="Link to this definition"></a></dt>
-<dd><p>List of dictionaries containing attributes of power ways.</p>
+<dt class="sig sig-object py" id="grid_engine.ingestion.PowerHandler.ways">
+<span class="sig-name descname"><span class="pre">ways</span></span><a class="headerlink" href="#grid_engine.ingestion.PowerHandler.ways" title="Link to this definition"></a></dt>
+<dd><p>Dictionaries containing attributes of power ways.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+</dl>
 </dd></dl>
 
-<p class="rubric">Example</p>
+<p class="rubric">Notes</p>
+<p>Must be applied with <code class="docutils literal notranslate"><span class="pre">locations=True</span></code> to resolve way node coordinates:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">handler</span><span class="o">.</span><span class="n">apply_file</span><span class="p">(</span><span class="s2">&quot;region.osm.pbf&quot;</span><span class="p">,</span> <span class="n">locations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">handler</span> <span class="o">=</span> <span class="n">PowerHandler</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">handler</span><span class="o">.</span><span class="n">apply_file</span><span class="p">(</span><span class="s2">&quot;tennessee.osm.pbf&quot;</span><span class="p">,</span> <span class="n">locations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span> <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;line&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">subs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span> <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;substation&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<dl class="py method">
-<dt class="sig sig-object py" id="ingestion.osm_handler.PowerHandler.node">
-<span class="sig-name descname"><span class="pre">node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/osm_handler.html#PowerHandler.node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.osm_handler.PowerHandler.node" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="ingestion.osm_handler.PowerHandler.way">
-<span class="sig-name descname"><span class="pre">way</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ingestion/osm_handler.html#PowerHandler.way"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.osm_handler.PowerHandler.way" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-ingestion">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-ingestion" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="ingestion.PowerHandler">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ingestion.</span></span><span class="sig-name descname"><span class="pre">PowerHandler</span></span><a class="reference internal" href="_modules/gridrisk/ingestion/osm_handler.html#PowerHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.PowerHandler" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SimpleHandler</span></code></p>
-<p>Parses an OSM PBF file to extract power infrastructure data.</p>
-<p>Parses an OSM PBF file using PyOsmium’s streaming parser to
-extract power infrastructure data. It collects nodes and ways with
-relevant power tags, storing their attributes in structured dictionaries.</p>
-<p>Must be applied with locations=True to resolve way node coordinates:
-handler.apply_file(“region.osm.pbf”, locations=True)</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="ingestion.PowerHandler.nodes">
-<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ingestion.PowerHandler.nodes" title="Link to this definition"></a></dt>
-<dd><p>List of dictionaries containing attributes of power nodes.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="ingestion.PowerHandler.ways">
-<span class="sig-name descname"><span class="pre">ways</span></span><a class="headerlink" href="#ingestion.PowerHandler.ways" title="Link to this definition"></a></dt>
-<dd><p>List of dictionaries containing attributes of power ways.</p>
-</dd></dl>
-
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">handler</span> <span class="o">=</span> <span class="n">PowerHandler</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">handler</span><span class="o">.</span><span class="n">apply_file</span><span class="p">(</span><span class="s2">&quot;tennessee.osm.pbf&quot;</span><span class="p">,</span> <span class="n">locations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span> <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;line&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">subs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span> <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;substation&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-<dl class="py method">
-<dt class="sig sig-object py" id="ingestion.PowerHandler.node">
-<span class="sig-name descname"><span class="pre">node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gridrisk/ingestion/osm_handler.html#PowerHandler.node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.PowerHandler.node" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="ingestion.PowerHandler.way">
-<span class="sig-name descname"><span class="pre">way</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gridrisk/ingestion/osm_handler.html#PowerHandler.way"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.PowerHandler.way" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="ingestion.clean_voltages">
-<span class="sig-prename descclassname"><span class="pre">ingestion.</span></span><span class="sig-name descname"><span class="pre">clean_voltages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gridrisk/ingestion/cleaning.html#clean_voltages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.clean_voltages" title="Link to this definition"></a></dt>
-<dd><p>Cleans and standardizes voltage values from the OSM data. OSM voltage tags can be inconsistent, containing multiple values, units, or non-numeric characters. This function extracts numeric voltage values, converts them to a consistent unit (volts), and returns a list of voltages for each powerline.</p>
+<dt class="sig sig-object py" id="grid_engine.ingestion.nodes_to_geodataframe">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.ingestion.</span></span><span class="sig-name descname"><span class="pre">nodes_to_geodataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grid_engine/backends/local/ingestion.html#nodes_to_geodataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.ingestion.nodes_to_geodataframe" title="Link to this definition"></a></dt>
+<dd><p>Converts a list of OSM node dictionaries into a GeoDataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>v</strong> (<em>_type_</em>) – The raw voltage value from the OSM data, which can be a string with multiple values and units, a single numeric value, or None.</p>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>list</em><em>[</em><em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A list of dictionaries representing OSM nodes. Each dictionary
+must contain <code class="docutils literal notranslate"><span class="pre">'lon'</span></code> and <code class="docutils literal notranslate"><span class="pre">'lat'</span></code> keys alongside any node attributes.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A list of cleaned voltage values in volts, or None if the input is invalid or missing. For example, an input of “10kV; 20kV” would return [10000, 20000], while an input of “15kV” would return [15000]. An input of None or an empty string would return None.</p>
+<dd class="field-even"><p>A GeoDataFrame with Point geometries in WGS 84 (EPSG:4326)
+containing all attributes from the input node dictionaries.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>_type_</p>
+<dd class="field-odd"><p>geopandas.GeoDataFrame</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="ingestion.extract_line_substation_connections">
-<span class="sig-prename descclassname"><span class="pre">ingestion.</span></span><span class="sig-name descname"><span class="pre">extract_line_substation_connections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substation_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/gridrisk/ingestion/cleaning.html#extract_line_substation_connections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.extract_line_substation_connections" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.segment_ways_at_nodes">
-<span class="sig-prename descclassname"><span class="pre">ingestion.</span></span><span class="sig-name descname"><span class="pre">segment_ways_at_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/gridrisk/ingestion/cleaning.html#segment_ways_at_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.segment_ways_at_nodes" title="Link to this definition"></a></dt>
-<dd><p>Splits powerlines into segments at nodes that are shared with other lines. This is important for accurately modeling the grid and identifying grid connectivity.</p>
+<dt class="sig sig-object py" id="grid_engine.ingestion.ways_to_geodataframe">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.ingestion.</span></span><span class="sig-name descname"><span class="pre">ways_to_geodataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ways</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grid_engine/backends/local/ingestion.html#ways_to_geodataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.ingestion.ways_to_geodataframe" title="Link to this definition"></a></dt>
+<dd><p>Converts a list of OSM way dictionaries into a GeoDataFrame.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A new GeoDataFrame with powerlines split into segments at shared nodes.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ways</strong> (<em>list</em><em>[</em><em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A list of dictionaries representing OSM ways. Each dictionary
+must contain a <code class="docutils literal notranslate"><span class="pre">'coords'</span></code> key with a sequence of <code class="docutils literal notranslate"><span class="pre">(lon,</span> <span class="pre">lat)</span></code>
+coordinate tuples alongside any way attributes.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>GeoDataFrame</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A GeoDataFrame with LineString geometries in WGS 84 (EPSG:4326)
+containing all attributes from the input way dictionaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>geopandas.GeoDataFrame</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="ingestion.voltage_splitting">
-<span class="sig-prename descclassname"><span class="pre">ingestion.</span></span><span class="sig-name descname"><span class="pre">voltage_splitting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/gridrisk/ingestion/cleaning.html#voltage_splitting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ingestion.voltage_splitting" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="graph.html" class="btn btn-neutral float-left" title="graph package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="risk.html" class="btn btn-neutral float-right" title="risk package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="topology.html" class="btn btn-neutral float-left" title="topology module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="graph.html" class="btn btn-neutral float-right" title="graph module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

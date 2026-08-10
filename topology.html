@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topology module &mdash; Grid Engine 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ingestion module" href="ingestion.html" />
+    <link rel="prev" title="cleaning module" href="cleaning.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Grid Engine
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">grid_engine</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="engine.html">engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleaning.html">cleaning module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">topology module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.build_circuit_terminals"><code class="docutils literal notranslate"><span class="pre">build_circuit_terminals()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.build_string_adjacency_list"><code class="docutils literal notranslate"><span class="pre">build_string_adjacency_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.build_strings"><code class="docutils literal notranslate"><span class="pre">build_strings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.build_touches"><code class="docutils literal notranslate"><span class="pre">build_touches()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.get_line_vector"><code class="docutils literal notranslate"><span class="pre">get_line_vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.get_node_df"><code class="docutils literal notranslate"><span class="pre">get_node_df()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.topology.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ingestion.html">ingestion module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph.html">graph module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="toy_data.html">toy_data module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Grid Engine</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">grid_engine</a></li>
+      <li class="breadcrumb-item active">topology module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topology.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-grid_engine.topology">
+<span id="topology-module"></span><h1>topology module<a class="headerlink" href="#module-grid_engine.topology" title="Link to this heading"></a></h1>
+<p>Public API gateway for topology functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.build_circuit_terminals">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">build_circuit_terminals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strands</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strand_links</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tap_incidence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substation_incidence</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#build_circuit_terminals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.build_circuit_terminals" title="Link to this definition"></a></dt>
+<dd><p>Resolves lines into circuits, and create a record of what each circuit is connected to along with other data.</p>
+<blockquote>
+<div><p>The culmination of the pipeline; takes pairings and adjacency lists built earlier and uses union find to collapse them into
+components. A circuit electrically connecting two substations is defined as an edge between them. When a circuit
+connects 3 or more substations (due to a t-tap), a tap node is infered and isused to accurately connect all 3
+within a graph network representation.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strands</strong> (<em>pd.DataFrame</em>) – Exploded strands from ‘build_strings()’, requiring ‘strand_id’.
+‘voltage’ is optional; without it every circuit reports None rather
+than being flagged mixed.</p></li>
+<li><p><strong>strand_links</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Strand pairs running straight through into each other, the first return
+of ‘build_string_adjacency_list()’.</p></li>
+<li><p><strong>tap_incidence</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – (strand_id, junction_id) pairs for strands meeting at a branching
+junction, the second return of ‘build_string_adjacency_list()’. Joined
+as a star per junction, so k strands contribute k-1 links rather than
+every pairing.</p></li>
+<li><p><strong>substation_incidence</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – (strand_id, substation_id) pairs, built in ‘GridEngine.run()’ from
+‘extract_line_substation_connections()’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per circuit, keyed by ‘component_id’. Carries its members
+(‘strands’, ‘n_strands’), what it reaches (‘terminals’, ‘tap’,
+‘junctions’, and their counts), a ‘voltage’ where its members agree,
+and the ‘is_stub’ / ‘mixed_voltage’ diagnostics.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.build_string_adjacency_list">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">build_string_adjacency_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joints_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#build_string_adjacency_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.build_string_adjacency_list" title="Link to this definition"></a></dt>
+<dd><p>Primary engine used to create line to line pairs at each node.</p>
+<blockquote>
+<div><p>This function finds the optimal solution to take single transmission lines created when exploding transmission lines by circuit count,
+and splices them together to create as accurate of a representation of the circuit level transmission network as possible.</p>
+<p>This algorithm ignores dead-ends (nodes with degree 1) and uses a simple assignment for through nodes (nodes with degree 2)</p>
+<p>For nodes degree &gt;= 3, Linear sum assignment for optimal assignment as opposed to greedy methods. Linear sum assignment requires an incoming and outgoing grouping which is found using the following methodology</p>
+<ol class="arabic simple">
+<li><p>First, _split_by_line_id() attempts to use a lines base ID (ID before exploding by circuit), to create groupings, if N/2 lines have the same ID, then there is a clear incoming and outgoing group, else move on to fallback 2.</p></li>
+<li><p>In the case _split_by_line_id() is unable to find an even split, _split_incoming_outgoing() utilizes the geometry of the lines to find a clear seperation between lines.</p></li>
+<li><p>In the case that neither method works, it is declared as unmatcheable.</p></li>
+</ol>
+<p>For nodes of an odd degree, there is an expected leftover line. This line is defined as a tap, and the handedness determined by _handedness, is used to determine what line in the transmission corridor that line taps.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>joints_df</strong> (<em>pd.DataFrame</em>) – Touch points from ‘build_touches()’ merged with ‘get_line_vector()’,
+requiring ‘node’, ‘strand_id’, ‘id’, and ‘vector’. ‘strand_seq’ is
+optional; without it lanes are matched on geometry alone and can swap
+sides across a segment boundary.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adjacency list, describing line to line connections, and a list containing all tap connections.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[list[tuple[str, str]], list[tuple[str, str]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.build_strings">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">build_strings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#build_strings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.build_strings" title="Link to this definition"></a></dt>
+<dd><p>Used to explode transmission corridors, of single voltage, into individual lines based on circuit count.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>line_df</strong> (<em>gpd.GeoDataFrame</em>) – Single-voltage corridors from ‘voltage_splitting()’, requiring ‘id’ and
+‘counts’. Rows whose count is missing or below 1 are reported as a
+warning and contribute no strands.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The input repeated once per circuit, with ‘strand_seq’ numbering the
+lanes within each corridor and ‘strand_id’ identifying each strand as
+‘{id}_s{strand_seq}’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.build_touches">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">build_touches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#build_touches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.build_touches" title="Link to this definition"></a></dt>
+<dd><p>Record every node each strand terminates at, one row per contact.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strings</strong> (<em>gpd.GeoDataFrame</em>) – Exploded strands from ‘build_strings()’, requiring ‘strand_id’, ‘id’,
+‘strand_seq’, and ‘node_refs’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per strand endpoint with ‘strand_id’, ‘id’, ‘strand_seq’, and
+‘node’. A closed strand contributes one row, not two.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.extract_line_substation_connections">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">extract_line_substation_connections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substation_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#extract_line_substation_connections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.extract_line_substation_connections" title="Link to this definition"></a></dt>
+<dd><p>Uses spatial joins to create a line endpoints-&gt;substation adjacency list. Handles instances where lines don’t end directly in substations with m_buffer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>line_gdf</strong> (<em>gpd.GeoDataFrame</em>) – GeoDataFrame containing all ways representing transmission corridors/lines,
+requiring ‘id’, ‘node_refs’, ‘geometry’, and a set ‘.crs’.</p></li>
+<li><p><strong>substation_gdf</strong> (<em>gpd.GeoDataFrame</em>) – GeoDataFrame containing substations, requiring ‘id’ and ‘geometry’.</p></li>
+<li><p><strong>m_buffer</strong> (<em>int</em>) – Search distance in meters for endpoints that miss a substation outright.
+Only dead ends are retried, so a line passing near a substation is not
+pulled into it.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary representing adjacencies between line endpoints and substations</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.get_line_vector">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">get_line_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#get_line_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.get_line_vector" title="Link to this definition"></a></dt>
+<dd><p>Computes the local heading of each line at both of its endpoints.</p>
+<p>Creates two records per row, one per endpoint, each tangential to its adjacent vertex and pointing away from its node into the line.</p>
+<p>Nodes that aren’t a segment endpoint receive no record.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>line_gdf</strong> (<em>gpd.GeoDataFrame</em>) – Transmission corridors, requiring ‘id’, ‘node_refs’, and LineString
+‘geometry’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per line endpoint with ‘id’, ‘node’, and ‘vector’, where
+‘vector’ is a unit numpy array of shape (2,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.get_node_df">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">get_node_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#get_node_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.get_node_df" title="Link to this definition"></a></dt>
+<dd><p>Generates a node level DataFrame, used primarily for quick access to the degree of each node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>line_df</strong> (<em>DataFrame</em>) – A pandas dataframe containing only the transmission lines captured from OSM data,
+requiring ‘node_refs’ and ‘coords’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per distinct node with ‘node_id’, ‘coords’, and ‘degree’, where
+degree counts how many lines reference that node.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.segment_ways_at_nodes">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">segment_ways_at_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#segment_ways_at_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.segment_ways_at_nodes" title="Link to this definition"></a></dt>
+<dd><p>Splits powerlines into segments at nodes that are shared with other lines. This is important for accurately modeling the grid and identifying grid connectivity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lines_gdf</strong> (<em>gpd.GeoDataFrame</em>) – All ways from ingestion, requiring ‘id’, ‘type’, ‘node_refs’, ‘coords’,
+and ‘geometry’.</p></li>
+<li><p><strong>line_types</strong> (<em>set</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – OSM types eligible for splitting, by default ‘_LINE_TYPES’
+({‘line’, ‘minor_line’, ‘cable’}).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The input with every split way replaced by its segments, in EPSG:4326.
+Returned unchanged when nothing needed splitting.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grid_engine.topology.voltage_splitting">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.topology.</span></span><span class="sig-name descname"><span class="pre">voltage_splitting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/topology.html#voltage_splitting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.topology.voltage_splitting" title="Link to this definition"></a></dt>
+<dd><p>Explodes transmission corridors into duplicate lines representing circuits of unique voltage. Appends the unique voltage to each id for seperability and identification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>gdf</strong> (<em>gpd.GeoDataFrame</em>) – Transmission corridors, requiring ‘id’, ‘voltage’, ‘node_refs’, and
+‘geometry’. ‘counts’ is optional and created empty when absent, leaving
+every circuit count for propagate_circuit_counts to resolve.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>GeoDataFrame representing all transmission corridors, lines, and circuits collected from OSM data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GeoDataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cleaning.html" class="btn btn-neutral float-left" title="cleaning module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ingestion.html" class="btn btn-neutral float-right" title="ingestion module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Shawn-Patrick Barhorst.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

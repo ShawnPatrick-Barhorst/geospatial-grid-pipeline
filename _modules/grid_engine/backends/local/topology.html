@@ -1,0 +1,1253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grid_engine.backends.local.topology &mdash; Grid Engine 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Grid Engine
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">grid_engine</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Grid Engine</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grid_engine.backends.local.topology</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grid_engine.backends.local.topology</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span><span class="p">,</span> <span class="n">Point</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_sum_assignment</span>
+
+
+<span class="n">_LINE_TYPES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="s2">&quot;minor_line&quot;</span><span class="p">,</span> <span class="s2">&quot;cable&quot;</span><span class="p">}</span>
+<span class="n">_TAP_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;tap_&quot;</span>
+
+<span class="c1"># Small scalar applied to assignment cost to break ties between identical lanes.</span>
+<span class="c1"># Far below any dot product (bounded by 1), serves to nudge not alter outcomes</span>
+<span class="n">_LANE_TIE_BREAK</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+
+<span class="c1"># Large scalar applied to assignment cost of unpairable lines </span>
+<span class="c1"># well above any real dot product (bounded by 1)</span>
+<span class="n">_UNPAIRABLE</span> <span class="o">=</span> <span class="mf">1e6</span>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_split_way</span><span class="p">(</span><span class="n">way</span><span class="p">,</span> <span class="n">end_nodes</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">line_types</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cuts a single way into segments wherever it passes through another way&#39;s endpoint.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    way : namedtuple</span>
+<span class="sd">        One row from &#39;lines_gdf.itertuples()&#39;, requiring &#39;type&#39;, &#39;node_refs&#39;,</span>
+<span class="sd">        &#39;coords&#39;, and &#39;id&#39;. Every other field present is carried through onto</span>
+<span class="sd">        each segment untouched.</span>
+<span class="sd">    end_nodes : set</span>
+<span class="sd">        Node ids that terminate some way in the dataset. An intermediate node</span>
+<span class="sd">        appearing here is a junction, so the way is cut there.</span>
+<span class="sd">    line_types : set[str]</span>
+<span class="sd">        OSM types eligible for splitting. Ways of any other type are returned</span>
+<span class="sd">        unsplit.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list[dict]</span>
+<span class="sd">        One dict per segment, each with its own &#39;id&#39; suffixed &#39;_{start}_{end}&#39;,</span>
+<span class="sd">        plus sliced &#39;geometry&#39;, &#39;node_refs&#39;, and &#39;coords&#39;. Empty when the way</span>
+<span class="sd">        is not an eligible type or crosses no junction, meaning no split is</span>
+<span class="sd">        needed and the caller should keep the original.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">way</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line_types</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">intermediate_nodes</span> <span class="o">=</span> <span class="n">way</span><span class="o">.</span><span class="n">node_refs</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">intermediate_nodes</span> <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">end_nodes</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="n">way</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;Index&quot;</span><span class="p">]</span>
+
+    <span class="n">split_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">way</span><span class="o">.</span><span class="n">node_refs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">split_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="n">split_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">way</span><span class="o">.</span><span class="n">node_refs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">segments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">end_index</span> <span class="ow">in</span> <span class="n">split_indices</span><span class="p">:</span>
+        <span class="n">node_refs_segment</span> <span class="o">=</span> <span class="n">way</span><span class="o">.</span><span class="n">node_refs</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">coords_segment</span> <span class="o">=</span> <span class="n">way</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_refs_segment</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">segment</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">way</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">start_index</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">end_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">LineString</span><span class="p">(</span><span class="n">coords_segment</span><span class="p">),</span>
+                <span class="s2">&quot;node_refs&quot;</span><span class="p">:</span> <span class="n">node_refs_segment</span><span class="p">,</span>
+                <span class="s2">&quot;coords&quot;</span><span class="p">:</span> <span class="n">coords_segment</span><span class="p">,</span>
+            <span class="p">})</span>
+            <span class="n">segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+
+        <span class="n">start_index</span> <span class="o">=</span> <span class="n">end_index</span>
+
+    <span class="k">return</span> <span class="n">segments</span>
+
+
+
+<div class="viewcode-block" id="segment_ways_at_nodes">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.segment_ways_at_nodes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">segment_ways_at_nodes</span><span class="p">(</span>
+    <span class="n">lines_gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> 
+    <span class="n">line_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Splits powerlines into segments at nodes that are shared with other lines. This is important for accurately modeling the grid and identifying grid connectivity.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lines_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        All ways from ingestion, requiring &#39;id&#39;, &#39;type&#39;, &#39;node_refs&#39;, &#39;coords&#39;,</span>
+<span class="sd">        and &#39;geometry&#39;.</span>
+<span class="sd">    line_types : set[str], optional</span>
+<span class="sd">        OSM types eligible for splitting, by default &#39;_LINE_TYPES&#39;</span>
+<span class="sd">        ({&#39;line&#39;, &#39;minor_line&#39;, &#39;cable&#39;}).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gpd.GeoDataFrame</span>
+<span class="sd">        The input with every split way replaced by its segments, in EPSG:4326.</span>
+<span class="sd">        Returned unchanged when nothing needed splitting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">line_types</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">line_types</span> <span class="o">=</span> <span class="n">_LINE_TYPES</span>
+    
+    <span class="n">end_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">lines_gdf</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">lines_gdf</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    
+    <span class="n">new_ways</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">way</span> <span class="ow">in</span> <span class="n">lines_gdf</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+        <span class="n">new_ways</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_split_way</span><span class="p">(</span><span class="n">way</span><span class="p">,</span> <span class="n">end_nodes</span><span class="p">,</span> <span class="n">line_types</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">new_ways</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lines_gdf</span>
+
+    <span class="n">needs_split</span> <span class="o">=</span> <span class="n">lines_gdf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">way</span><span class="p">:</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">line_types</span>
+        <span class="ow">and</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;node_refs&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;node_refs&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">node</span> <span class="ow">in</span> <span class="n">end_nodes</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;node_refs&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">new_gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">new_ways</span><span class="p">,</span>
+        <span class="n">geometry</span><span class="o">=</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">new_ways</span><span class="p">],</span>
+        <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">lines_gdf</span><span class="p">[</span><span class="o">~</span><span class="n">needs_split</span><span class="p">],</span> <span class="n">new_gdf</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="extract_line_substation_connections">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.extract_line_substation_connections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_line_substation_connections</span><span class="p">(</span><span class="n">line_gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">substation_gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">m_buffer</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses spatial joins to create a line endpoints-&gt;substation adjacency list. Handles instances where lines don&#39;t end directly in substations with m_buffer.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        GeoDataFrame containing all ways representing transmission corridors/lines,</span>
+<span class="sd">        requiring &#39;id&#39;, &#39;node_refs&#39;, &#39;geometry&#39;, and a set &#39;.crs&#39;.</span>
+<span class="sd">    substation_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        GeoDataFrame containing substations, requiring &#39;id&#39; and &#39;geometry&#39;.</span>
+<span class="sd">    m_buffer : int</span>
+<span class="sd">        Search distance in meters for endpoints that miss a substation outright.</span>
+<span class="sd">        Only dead ends are retried, so a line passing near a substation is not</span>
+<span class="sd">        pulled into it.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, str]</span>
+<span class="sd">        A dictionary representing adjacencies between line endpoints and substations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#TODO: Verify output dictionary is not silently dropping connections. Something I realized when using dicts for downstream adjacency dictionaries.</span>
+    
+    <span class="n">starts</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span>
+        <span class="s1">&#39;line_id&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;node_ref&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">refs</span><span class="p">:</span> <span class="n">refs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refs</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">Point</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">LineString</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="p">},</span> <span class="n">crs</span><span class="o">=</span><span class="n">line_gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+
+    <span class="n">ends</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span>
+        <span class="s1">&#39;line_id&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;node_ref&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">refs</span><span class="p">:</span> <span class="n">refs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refs</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">line_gdf</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">Point</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">LineString</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="p">},</span> <span class="n">crs</span><span class="o">=</span><span class="n">line_gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+
+    <span class="n">endpoints</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">node_counts</span> <span class="o">=</span> <span class="n">endpoints</span><span class="p">[</span><span class="s1">&#39;node_ref&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="n">joined</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span>
+        <span class="n">endpoints</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">),</span>
+        <span class="n">substation_gdf</span><span class="p">[[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">),</span>
+        <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+        <span class="n">predicate</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">matched</span> <span class="o">=</span> <span class="n">joined</span><span class="p">[</span><span class="n">joined</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()]</span>
+    <span class="n">unmatched</span> <span class="o">=</span> <span class="n">joined</span><span class="p">[</span><span class="n">joined</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span>
+
+    <span class="c1"># Buffer unmatched endpoints and try to match again</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">unmatched</span><span class="o">.</span><span class="n">empty</span> <span class="ow">and</span> <span class="n">m_buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Drop the stale (all-NaN) join columns so the nearest-join&#39;s &#39;id&#39;</span>
+        <span class="c1"># doesn&#39;t collide and get suffixed away from matched[&#39;id&#39;].</span>
+        <span class="n">unmatched_dead_ends</span> <span class="o">=</span> <span class="n">unmatched</span><span class="p">[</span><span class="n">unmatched</span><span class="p">[</span><span class="s1">&#39;node_ref&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">ref</span><span class="p">:</span> <span class="n">node_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">unmatched_dead_ends</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">unmatched_dead_ends</span> <span class="o">=</span> <span class="n">unmatched_dead_ends</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;index_right&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="n">nearest_dead_ends</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin_nearest</span><span class="p">(</span>
+                <span class="n">unmatched_dead_ends</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">),</span>
+                <span class="n">substation_gdf</span><span class="p">[[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">),</span>
+                <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                <span class="n">distance_col</span><span class="o">=</span><span class="s1">&#39;m_distance&#39;</span><span class="p">,</span>
+                <span class="n">rsuffix</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span>
+            <span class="p">)</span>
+            <span class="n">within_buffer_dead_ends</span> <span class="o">=</span> <span class="n">nearest_dead_ends</span><span class="p">[</span><span class="n">nearest_dead_ends</span><span class="p">[</span><span class="s1">&#39;m_distance&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">m_buffer</span><span class="p">]</span>
+            <span class="n">matched</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">matched</span><span class="p">,</span> <span class="n">within_buffer_dead_ends</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">matched</span><span class="p">[</span><span class="s1">&#39;node_ref&#39;</span><span class="p">],</span> <span class="n">matched</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">mapping</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_voltage_list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to detect and coerce NaN or None values into a clean list of voltages.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    v : list, float, int, or None</span>
+<span class="sd">        A single voltage reading or a list of voltage values. Single NaN or </span>
+<span class="sd">        None inputs are converted to ``[None]``, while lists have their NaN </span>
+<span class="sd">        elements filtered out.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        A list of valid voltage values, or ``[None]`` if no valid values exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">cleaned</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">cleaned</span> <span class="k">if</span> <span class="n">cleaned</span> <span class="k">else</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">v</span><span class="p">]</span>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_scalar_count</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coerces a scalar value into a valid integer count.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    count : float, bool, int, str, or None</span>
+<span class="sd">        The input scalar value to normalize into an integer count.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int or None</span>
+<span class="sd">        The normalized integer value if `count` represents a valid whole</span>
+<span class="sd">        number; otherwise ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">if</span> <span class="n">count</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">Integral</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">count</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">parsed</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span> <span class="k">if</span> <span class="n">parsed</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_circuit_counts</span><span class="p">(</span><span class="n">voltages</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve initial circuit counts per voltage using a rule based approach. </span>
+<span class="sd">        Circuits counts marked as &#39;&#39;None&#39;&#39; can be solved later using grid_engine.cleaning.propagate_circuit_counts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    voltages : int or list</span>
+<span class="sd">        Either a list of unique voltages per line, or an int for single voltage lines.</span>
+
+<span class="sd">    count : int</span>
+<span class="sd">        Number of individual circuits per corridor.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        One count per voltage, aligned to &#39;voltages&#39;. Entries are None where the</span>
+<span class="sd">        rules cannot decide, leaving them for</span>
+<span class="sd">        grid_engine.cleaning.propagate_circuit_counts to resolve.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">voltages</span> <span class="o">=</span> <span class="n">voltages</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">voltages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">voltages</span><span class="p">]</span>
+    <span class="n">v_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">voltages</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">normalized</span> <span class="o">=</span> <span class="p">[</span><span class="n">_normalize_scalar_count</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">count</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">normalized</span><span class="p">)</span> <span class="o">==</span> <span class="n">v_count</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">normalized</span>
+
+        <span class="n">non_null</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">normalized</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">non_null</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_null</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">_normalize_scalar_count</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">v_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># State 1: If circuit count is equal to unique voltage count, split circuit count into a list of 1s</span>
+    <span class="k">if</span> <span class="n">v_count</span> <span class="o">==</span> <span class="n">count</span> <span class="ow">and</span> <span class="n">count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_count</span>
+
+    <span class="c1"># State 2: If there is 1 voltage but multiple circuits, assign the circuit count to that voltage</span>
+    <span class="k">if</span> <span class="n">v_count</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_count</span>
+
+    <span class="c1"># State 3: If there are multiple voltages but only 1 circuit, flag</span>
+    <span class="k">if</span> <span class="n">v_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">count</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">count</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_count</span>
+    
+    <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_count</span>
+
+
+
+<div class="viewcode-block" id="voltage_splitting">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.voltage_splitting">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">voltage_splitting</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Explodes transmission corridors into duplicate lines representing circuits of unique voltage. Appends the unique voltage to each id for seperability and identification.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gdf : gpd.GeoDataFrame</span>
+<span class="sd">        Transmission corridors, requiring &#39;id&#39;, &#39;voltage&#39;, &#39;node_refs&#39;, and</span>
+<span class="sd">        &#39;geometry&#39;. &#39;counts&#39; is optional and created empty when absent, leaving</span>
+<span class="sd">        every circuit count for propagate_circuit_counts to resolve.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GeoDataFrame</span>
+<span class="sd">        GeoDataFrame representing all transmission corridors, lines, and circuits collected from OSM data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Ensure voltage is always a list</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">crs</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">crs</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">_normalize_voltage_list</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;counts&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gdf</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">_compute_circuit_counts</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">],</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">])]</span>
+
+    <span class="c1"># Flag shared corridors before exploding</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;shared_tower&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;shared_tower_voltages&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;original_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#TODO: Consider cleaning this, going from dataframe to geodataframe is scuffed</span>
+    <span class="c1"># Explode — one row per voltage</span>
+    <span class="c1"># Use pandas explode for multiple columns; GeoPandas explode only supports</span>
+    <span class="c1"># a single geometry column and will error when passed a list.</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gdf</span><span class="p">)</span><span class="o">.</span><span class="n">explode</span><span class="p">([</span><span class="s1">&#39;voltage&#39;</span><span class="p">,</span> <span class="s1">&#39;counts&#39;</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
+    
+    <span class="c1"># Reconstruct unique ID per voltage</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;original_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="c1"># Reconstruct node_refs list to reflect voltage-specific IDs for shared corridors</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span>
+        <span class="p">],</span>
+
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">gdf</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simplify_graph</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">line_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Not currently used. Simplifies specified line types with multiple chaining node_refs, into simplified versions containing only the first and last node, used for substation and line to line connectivity.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gdf : gpd.GeoDataFrame</span>
+<span class="sd">        GeoDataFrame containing all transmission corridors.</span>
+<span class="sd">    line_types : list[str]</span>
+<span class="sd">        List of line types, used to mask this function to a certain subset of line types.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gpd.GeoDataFrame</span>
+<span class="sd">        GeoDataFrame containing all transmission corridors where specified line types have intermediary node_refs removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Only simplify lines that are not of the specified types (e.g., &#39;line&#39;, &#39;minor_line&#39;, &#39;cable&#39;)</span>
+    <span class="n">to_simplify</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="o">~</span><span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">line_types</span><span class="p">)]</span>
+
+    <span class="c1"># Simplify node_refs and geometry for the selected lines by keeping only the start and end nodes</span>
+    <span class="n">to_simplify</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_simplify</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">],</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>  
+
+    <span class="c1"># Simplify geometry to a single point if it&#39;s a LineString with more than 2 coordinates, otherwise keep it as is </span>
+    <span class="n">to_simplify</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_simplify</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">Point</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">],</span> <span class="n">LineString</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">],</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>   
+
+    <span class="c1"># Combine the simplified lines back with the rest of the GeoDataFrame</span>
+    <span class="n">simplified_gdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">to_simplify</span><span class="p">,</span> <span class="n">gdf</span><span class="p">[</span><span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">line_types</span><span class="p">)]],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">simplified_gdf</span>
+
+
+
+<div class="viewcode-block" id="get_line_vector">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.get_line_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_line_vector</span><span class="p">(</span><span class="n">line_gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the local heading of each line at both of its endpoints.</span>
+
+<span class="sd">    Creates two records per row, one per endpoint, each tangential to its adjacent vertex and pointing away from its node into the line.</span>
+
+<span class="sd">    Nodes that aren&#39;t a segment endpoint receive no record.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line_gdf : gpd.GeoDataFrame</span>
+<span class="sd">        Transmission corridors, requiring &#39;id&#39;, &#39;node_refs&#39;, and LineString</span>
+<span class="sd">        &#39;geometry&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        One row per line endpoint with &#39;id&#39;, &#39;node&#39;, and &#39;vector&#39;, where</span>
+<span class="sd">        &#39;vector&#39; is a unit numpy array of shape (2,).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">line_gdf</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">line_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+        <span class="n">start_node</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">end_node</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">v_start</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">norm_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_start</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">norm_start</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">line_id</span><span class="p">,</span>
+                    <span class="s1">&#39;node&#39;</span><span class="p">:</span> <span class="n">start_node</span><span class="p">,</span>
+                    <span class="s1">&#39;vector&#39;</span><span class="p">:</span> <span class="n">v_start</span> <span class="o">/</span> <span class="n">norm_start</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="n">v_end</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">norm_end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_end</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">norm_end</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">line_id</span><span class="p">,</span>
+                    <span class="s1">&#39;node&#39;</span><span class="p">:</span> <span class="n">end_node</span><span class="p">,</span>
+                    <span class="s1">&#39;vector&#39;</span><span class="p">:</span> <span class="n">v_end</span> <span class="o">/</span> <span class="n">norm_end</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">records</span><span class="p">)</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_split_by_line_id</span><span class="p">(</span><span class="n">line_ids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Splits a junction into incoming and outgoing using line id&#39;s. Used downstream for linear sum assignment.</span>
+<span class="sd">        Incoming and outgoing is language adopted from linear sum assignment itself, this does not imply directionality in any way.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line_ids : str</span>
+<span class="sd">        The base ID assigned to each transmission corridor before being broken down into individual lines.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    set(list[incoming], list[outgoing]) or None</span>
+<span class="sd">        Returns particular lines divided by each group, or returns None if incoming/outgoing cannot be cleanly resolved with this rule set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">line_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">line_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">line_ids</span><span class="p">):</span>
+        <span class="n">groups</span><span class="p">[</span><span class="n">line_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">kv</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">side_a</span><span class="p">),</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">side_b</span><span class="p">)</span> <span class="o">=</span> <span class="n">ordered</span>
+        <span class="k">return</span> <span class="n">side_a</span><span class="p">,</span> <span class="n">side_b</span>
+
+    <span class="c1"># Three or more lines: still decidable when one line brings exactly half the strands</span>
+    <span class="n">half</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line_ids</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">remainder</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">biggest_id</span><span class="p">,</span> <span class="n">biggest</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">biggest</span><span class="p">)</span> <span class="o">==</span> <span class="n">half</span><span class="p">:</span>
+            <span class="n">rest</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line_ids</span><span class="p">))</span> <span class="k">if</span> <span class="n">line_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">biggest_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">biggest</span><span class="p">,</span> <span class="n">rest</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_split_incoming_outgoing</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">,</span> <span class="n">line_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;In the event &#39;_split_by_line_id()&#39; cannnot resolve incoming/outgoing, this function serves as a fallback which attempts to resolve the conflict using geometry.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    norm_vectors : np.ndarray</span>
+<span class="sd">        Unit bearings of every strand at this node, shape (degree, 2), each</span>
+<span class="sd">        pointing away from the node into its strand.</span>
+<span class="sd">    line_ids : list[str], optional</span>
+<span class="sd">        Base corridor id per strand, positionally aligned to &#39;norm_vectors&#39;,</span>
+<span class="sd">        by default None. Passed straight to &#39;_split_by_line_id()&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[int], list[int]]</span>
+<span class="sd">        Indices into &#39;norm_vectors&#39; split into the two sides, named left and</span>
+<span class="sd">        right after the geometry rather than any direction of flow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">by_id</span> <span class="o">=</span> <span class="n">_split_by_line_id</span><span class="p">(</span><span class="n">line_ids</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">by_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">by_id</span>
+
+    <span class="n">mean_dir</span> <span class="o">=</span> <span class="n">norm_vectors</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">mean_dir</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-9</span><span class="p">:</span>
+        <span class="c1"># Bearings cancel: already a balanced corridor, any strand serves</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">norm_vectors</span> <span class="o">@</span> <span class="n">mean_dir</span><span class="p">))]</span>
+
+    <span class="n">projections</span> <span class="o">=</span> <span class="n">norm_vectors</span> <span class="o">@</span> <span class="n">axis</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">))</span> <span class="k">if</span> <span class="n">projections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">))</span> <span class="k">if</span> <span class="n">projections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_handedness</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signed cross product: Used to determine which side of &#39;axis&#39; does &#39;vector&#39; lie on.</span>
+
+<span class="sd">    Used for taps with the assumption that transmission lines rarely cross one another. If a tap occurs on the left, it is assigned to the line representing the left, vice verasa.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    axis : np.ndarray</span>
+<span class="sd">        Reference bearing of shape (2,), facing along the corridor.</span>
+<span class="sd">    vector : np.ndarray</span>
+<span class="sd">        Bearing of shape (2,) to place relative to &#39;axis&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Positive when &#39;vector&#39; lies to the left of &#39;axis&#39;, negative to the</span>
+<span class="sd">        right, and zero when the two are collinear.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">axis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_match_strands_at_node</span><span class="p">(</span>
+    <span class="n">strand_ids</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">,</span> <span class="n">strand_seqs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">line_ids</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utilizes linear sum assignment to optimally assign line pairs at each node. </span>
+<span class="sd">        In the event there is an odd number of lines at a node or linear sum assignment is unable to assign a line pair, </span>
+<span class="sd">        this function returns a list of unmatched strands to be treated as circuit taps downstream.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strand_ids : list[str]</span>
+<span class="sd">        Every strand meeting at this node, one entry per contact.</span>
+<span class="sd">    norm_vectors : np.ndarray</span>
+<span class="sd">        Unit bearings of every strand at this node, shape (degree, 2), each</span>
+<span class="sd">        pointing away from the node into its strand.</span>
+<span class="sd">    strand_seqs : list[int], optional</span>
+<span class="sd">        Lane number within each strand&#39;s corridor, positionally aligned to</span>
+<span class="sd">        &#39;strand_ids&#39;, by default None. Used only to break ties between</span>
+<span class="sd">        otherwise identical pairings, so lanes stay on their own side across a</span>
+<span class="sd">        segment boundary; without it those ties resolve arbitrarily.</span>
+<span class="sd">    line_ids : list[str], optional</span>
+<span class="sd">        Base corridor id per strand, positionally aligned to &#39;strand_ids&#39;, by</span>
+<span class="sd">        default None. Bars two strands of the same line from pairing with each</span>
+<span class="sd">        other, and lets &#39;_split_by_line_id()&#39; settle the node by identity</span>
+<span class="sd">        before geometry is consulted.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[tuple[str, str]], list[str]]</span>
+<span class="sd">        Sorted strand pairs continuing through the node, and the strand ids</span>
+<span class="sd">        left over, which are branches to be treated as taps downstream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">_split_incoming_outgoing</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">,</span> <span class="n">line_ids</span><span class="p">)</span>
+
+    <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">left</span> <span class="ow">and</span> <span class="n">right</span><span class="p">:</span>
+        <span class="c1"># Cost is the dot product, so straight-through (~ -1.0) is cheapest</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">right</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">left</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">right</span><span class="p">):</span>
+                <span class="n">cost</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+
+                <span class="c1"># Last Resort: Cleans up junctions that could not settle by</span>
+                <span class="k">if</span> <span class="n">line_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">line_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">line_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                    <span class="n">cost</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">_UNPAIRABLE</span>
+
+                <span class="c1"># Keep a lane on its own side across a segment boundary</span>
+                <span class="k">elif</span> <span class="n">strand_seqs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">strand_seqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">strand_seqs</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                    <span class="n">cost</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">-=</span> <span class="n">_LANE_TIE_BREAK</span>
+
+        <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">linear_sum_assignment</span><span class="p">(</span><span class="n">cost</span><span class="p">)</span>
+
+        <span class="c1"># If N pairs arrive and N pairs leave, all lines are paired (angle agnostic)</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">cost</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">_UNPAIRABLE</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># barred pairing the solver took only to fill the matrix</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">right</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="n">pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">strand_ids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strand_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]))))</span>
+            <span class="n">matched</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">strand_ids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strand_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+
+    <span class="n">pairs</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">unmatched</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">strand_ids</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">unmatched</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_assign_branch_to_lane</span><span class="p">(</span>
+    <span class="n">branch_index</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">strand_ids</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">,</span> <span class="n">strand_seqs</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Chooses which through-lane at a node, an unmatched line taps onto.</span>
+
+<span class="sd">        In the event that there are parallel through-lines and &#39;build_string_adjacency_list()&#39;, identifies a tap, </span>
+<span class="sd">        a decision had to be made as to which through-line that tap belongs to. Under the base assumption that </span>
+<span class="sd">        transmission lines do not cross, we use signed_handedness to determine whether the tap is on the left or right</span>
+<span class="sd">        of the transmission corridor and assigns the tap accordingly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    branch_index : int</span>
+<span class="sd">        Position of the tapping strand within &#39;strand_ids&#39; and &#39;norm_vectors&#39;.</span>
+<span class="sd">    pairs : list[tuple[str, str]]</span>
+<span class="sd">        Through-lanes at this node, as returned by &#39;_match_strands_at_node()&#39;.</span>
+<span class="sd">    strand_ids : list[str]</span>
+<span class="sd">        Every strand meeting at this node, one entry per contact.</span>
+<span class="sd">    norm_vectors : np.ndarray</span>
+<span class="sd">        Unit bearings of every strand at this node, shape (degree, 2), each</span>
+<span class="sd">        pointing away from the node into its strand.</span>
+<span class="sd">    strand_seqs : list[int], optional</span>
+<span class="sd">        Lane number within each strand&#39;s corridor, positionally aligned to</span>
+<span class="sd">        &#39;strand_ids&#39;, by default None. Orders the lanes when handedness cannot</span>
+<span class="sd">        separate them; without it that ordering falls back to strand id.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[str, str] or None</span>
+<span class="sd">        The lane the branch taps into, or None when there are no lanes to tap.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pairs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pairs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">position</span> <span class="o">=</span> <span class="p">{</span><span class="n">strand_id</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">strand_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strand_ids</span><span class="p">)}</span>
+
+    <span class="c1"># Axis: the straightest pair, tail-to-head from its smaller strand id.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">straightness</span><span class="p">(</span><span class="n">pair</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">position</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">norm_vectors</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="n">b</span><span class="p">]))</span>
+
+    <span class="n">axis_pair</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span><span class="n">straightness</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">p</span><span class="p">))</span>
+    <span class="n">tail</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="n">axis_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="o">-</span><span class="n">norm_vectors</span><span class="p">[</span><span class="n">tail</span><span class="p">]</span>  <span class="c1"># bearings point outward; flip to face along it</span>
+
+    <span class="n">branch_side</span> <span class="o">=</span> <span class="n">_handedness</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="n">branch_index</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lane_side</span><span class="p">(</span><span class="n">pair</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">position</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">_handedness</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="n">a</span><span class="p">])</span>
+                <span class="o">+</span> <span class="n">_handedness</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">[</span><span class="n">b</span><span class="p">]))</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="n">spread</span> <span class="o">=</span> <span class="p">[</span><span class="n">lane_side</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">spread</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">spread</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-9</span><span class="p">:</span>
+        <span class="c1"># Lanes are geometrically distinct: take the one nearest the branch.</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">lane_side</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">branch_side</span><span class="p">),</span> <span class="n">p</span><span class="p">))</span>
+
+    <span class="c1"># Order lanes by strand_seq and let the branches signed_cross determine a side</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lane_seq</span><span class="p">(</span><span class="n">pair</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">strand_seqs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pair</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">strand_seqs</span><span class="p">[</span><span class="n">position</span><span class="p">[</span><span class="n">s</span><span class="p">]]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">pair</span><span class="p">),</span> <span class="n">pair</span><span class="p">)</span>
+
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">lane_seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ordered</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">branch_side</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">ordered</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="build_string_adjacency_list">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.build_string_adjacency_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_string_adjacency_list</span><span class="p">(</span>
+    <span class="n">joints_df</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary engine used to create line to line pairs at each node.</span>
+
+<span class="sd">       This function finds the optimal solution to take single transmission lines created when exploding transmission lines by circuit count,</span>
+<span class="sd">       and splices them together to create as accurate of a representation of the circuit level transmission network as possible.</span>
+
+<span class="sd">       This algorithm ignores dead-ends (nodes with degree 1) and uses a simple assignment for through nodes (nodes with degree 2)</span>
+
+<span class="sd">       For nodes degree &gt;= 3, Linear sum assignment for optimal assignment as opposed to greedy methods. Linear sum assignment requires an incoming and outgoing grouping which is found using the following methodology</span>
+
+<span class="sd">       1) First, _split_by_line_id() attempts to use a lines base ID (ID before exploding by circuit), to create groupings, if N/2 lines have the same ID, then there is a clear incoming and outgoing group, else move on to fallback 2.</span>
+<span class="sd">       2) In the case _split_by_line_id() is unable to find an even split, _split_incoming_outgoing() utilizes the geometry of the lines to find a clear seperation between lines.</span>
+<span class="sd">       3) In the case that neither method works, it is declared as unmatcheable.</span>
+
+<span class="sd">       For nodes of an odd degree, there is an expected leftover line. This line is defined as a tap, and the handedness determined by _handedness, is used to determine what line in the transmission corridor that line taps.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    joints_df : pd.DataFrame</span>
+<span class="sd">        Touch points from &#39;build_touches()&#39; merged with &#39;get_line_vector()&#39;,</span>
+<span class="sd">        requiring &#39;node&#39;, &#39;strand_id&#39;, &#39;id&#39;, and &#39;vector&#39;. &#39;strand_seq&#39; is</span>
+<span class="sd">        optional; without it lanes are matched on geometry alone and can swap</span>
+<span class="sd">        sides across a segment boundary.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[tuple[str, str]], list[tuple[str, str]]]</span>
+<span class="sd">        An adjacency list, describing line to line connections, and a list containing all tap connections.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">string_edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tap_edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    <span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">node_df</span> <span class="ow">in</span> <span class="n">joints_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;node&quot;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># Degree &lt;2: Dead End Checks</span>
+        <span class="k">if</span> <span class="n">node_df</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">node_df</span> <span class="o">=</span> <span class="n">node_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;strand_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">strand_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">node_df</span><span class="p">[</span><span class="s2">&quot;strand_id&quot;</span><span class="p">])</span>
+        <span class="n">degree</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strand_ids</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">degree</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Degree 2: Direct 1-to-1 pass-through vertex</span>
+        <span class="k">elif</span> <span class="n">degree</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">string_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">strand_ids</span><span class="p">)))</span>
+
+        <span class="c1"># Degree &gt;= 3: Complex Multi-Circuit Junction or T-Tap</span>
+        <span class="k">elif</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">node_df</span><span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">norms</span><span class="p">[</span><span class="n">norms</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">norm_vectors</span> <span class="o">=</span> <span class="n">vectors</span> <span class="o">/</span> <span class="n">norms</span>
+
+            <span class="n">strand_seqs</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">node_df</span><span class="p">[</span><span class="s2">&quot;strand_seq&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s2">&quot;strand_seq&quot;</span> <span class="ow">in</span> <span class="n">node_df</span><span class="o">.</span><span class="n">columns</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">line_ids</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">node_df</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="s2">&quot;id&quot;</span> <span class="ow">in</span> <span class="n">node_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+
+            <span class="n">pairs</span><span class="p">,</span> <span class="n">unmatched</span> <span class="o">=</span> <span class="n">_match_strands_at_node</span><span class="p">(</span>
+                <span class="n">strand_ids</span><span class="p">,</span> <span class="n">norm_vectors</span><span class="p">,</span> <span class="n">strand_seqs</span><span class="p">,</span> <span class="n">line_ids</span>
+            <span class="p">)</span>
+            <span class="n">string_edges</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+
+            <span class="c1"># Unmatched lines occur in nodes of odd degree and trigger the tap assignment logic</span>
+            <span class="k">if</span> <span class="n">unmatched</span><span class="p">:</span>
+                <span class="n">virtual_tap_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_TAP_PREFIX</span><span class="si">}{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strand_ids</span><span class="p">)}</span>
+
+                <span class="n">unmatched_lines</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">{</span><span class="n">line_ids</span><span class="p">[</span><span class="n">position</span><span class="p">[</span><span class="n">s</span><span class="p">]]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">unmatched</span><span class="p">}</span>
+                    <span class="k">if</span> <span class="n">line_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unmatched_lines</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># Multiple unmatched lines means that the lines at the node could not reconcile</span>
+                    <span class="c1"># TODO: Add flags for this occurance, and attempt future fixes with extra rules and logic to assign currently unmatchable lines</span>
+                    <span class="n">tap_edges</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">virtual_tap_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">strand_ids</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># One line branching off a corridor. It splices onto the lane on its own side</span>
+                    <span class="k">for</span> <span class="n">strand_id</span> <span class="ow">in</span> <span class="n">unmatched</span><span class="p">:</span>
+                        <span class="n">tap_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">strand_id</span><span class="p">,</span> <span class="n">virtual_tap_id</span><span class="p">))</span>
+
+                        <span class="n">lane</span> <span class="o">=</span> <span class="n">_assign_branch_to_lane</span><span class="p">(</span>
+                            <span class="n">position</span><span class="p">[</span><span class="n">strand_id</span><span class="p">],</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">strand_ids</span><span class="p">,</span>
+                            <span class="n">norm_vectors</span><span class="p">,</span> <span class="n">strand_seqs</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">lane</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">tap_edges</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">virtual_tap_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">lane</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">string_edges</span><span class="p">,</span> <span class="n">tap_edges</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_node_df">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.get_node_df">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_node_df</span><span class="p">(</span><span class="n">line_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a node level DataFrame, used primarily for quick access to the degree of each node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line_df : DataFrame</span>
+<span class="sd">        A pandas dataframe containing only the transmission lines captured from OSM data,</span>
+<span class="sd">        requiring &#39;node_refs&#39; and &#39;coords&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        One row per distinct node with &#39;node_id&#39;, &#39;coords&#39;, and &#39;degree&#39;, where</span>
+<span class="sd">        degree counts how many lines reference that node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">node_df</span> <span class="o">=</span> <span class="n">line_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">node_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">node_df</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">,</span> <span class="s1">&#39;coords&#39;</span><span class="p">])</span>
+
+    <span class="n">node_degree</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">node_df</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span>
+        <span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="s1">&#39;node_refs&#39;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;degree&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">node_df</span><span class="p">[[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">,</span> <span class="s1">&#39;coords&#39;</span><span class="p">]]</span>
+        <span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;node_refs&#39;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;node_refs&#39;</span><span class="p">:</span> <span class="s1">&#39;node_id&#39;</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;degree&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">node_degree</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;node_refs&#39;</span><span class="p">)[</span><span class="s1">&#39;degree&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nodes</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_union_find</span><span class="p">(</span><span class="n">members</span><span class="p">,</span> <span class="n">links</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Union find algorithm used to determine &quot;electrical connectivity&quot; between transmission lines. Each final group</span>
+<span class="sd">       represents a single continuous conductor between substations or taps.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    members : list[str]</span>
+<span class="sd">        Every strand id to be grouped, including isolated ones that no link</span>
+<span class="sd">        reaches.</span>
+<span class="sd">    links : list[tuple[str, str]]</span>
+<span class="sd">        Strand pairs known to be electrically joined. Sort before passing:</span>
+<span class="sd">        the smaller id of each merge becomes the group&#39;s root, so ordering</span>
+<span class="sd">        decides the component ids and keeps them stable run to run.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, str]</span>
+<span class="sd">        Each strand id mapped to its group&#39;s root id. Strands appearing only</span>
+<span class="sd">        in &#39;links&#39; are included alongside those in &#39;members&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">members</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">while</span> <span class="n">parent</span><span class="p">[</span><span class="n">root</span><span class="p">]</span> <span class="o">!=</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">parent</span><span class="p">[</span><span class="n">root</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">parent</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">!=</span> <span class="n">root</span><span class="p">:</span>
+            <span class="n">parent</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">x</span> <span class="o">=</span> <span class="n">root</span><span class="p">,</span> <span class="n">parent</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">root</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_union</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">ra</span><span class="p">,</span> <span class="n">rb</span> <span class="o">=</span> <span class="n">_find</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">_find</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ra</span> <span class="o">!=</span> <span class="n">rb</span><span class="p">:</span>
+            <span class="c1"># Lexicographic min as root keeps component ids reproducable run to run</span>
+            <span class="n">parent</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">rb</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">rb</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+        <span class="n">_union</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_find</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">}</span>
+
+
+
+
+
+<div class="viewcode-block" id="build_circuit_terminals">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.build_circuit_terminals">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_circuit_terminals</span><span class="p">(</span>
+    <span class="n">strands</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">strand_links</span><span class="p">,</span>
+    <span class="n">tap_incidence</span><span class="p">,</span>
+    <span class="n">substation_incidence</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolves lines into circuits, and create a record of what each circuit is connected to along with other data.</span>
+
+<span class="sd">       The culmination of the pipeline; takes pairings and adjacency lists built earlier and uses union find to collapse them into</span>
+<span class="sd">       components. A circuit electrically connecting two substations is defined as an edge between them. When a circuit</span>
+<span class="sd">       connects 3 or more substations (due to a t-tap), a tap node is infered and isused to accurately connect all 3</span>
+<span class="sd">       within a graph network representation.</span>
+
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strands : pd.DataFrame</span>
+<span class="sd">        Exploded strands from &#39;build_strings()&#39;, requiring &#39;strand_id&#39;.</span>
+<span class="sd">        &#39;voltage&#39; is optional; without it every circuit reports None rather</span>
+<span class="sd">        than being flagged mixed.</span>
+<span class="sd">    strand_links : list[tuple[str, str]]</span>
+<span class="sd">        Strand pairs running straight through into each other, the first return</span>
+<span class="sd">        of &#39;build_string_adjacency_list()&#39;.</span>
+<span class="sd">    tap_incidence : list[tuple[str, str]]</span>
+<span class="sd">        (strand_id, junction_id) pairs for strands meeting at a branching</span>
+<span class="sd">        junction, the second return of &#39;build_string_adjacency_list()&#39;. Joined</span>
+<span class="sd">        as a star per junction, so k strands contribute k-1 links rather than</span>
+<span class="sd">        every pairing.</span>
+<span class="sd">    substation_incidence : list[tuple[str, str]]</span>
+<span class="sd">        (strand_id, substation_id) pairs, built in &#39;GridEngine.run()&#39; from</span>
+<span class="sd">        &#39;extract_line_substation_connections()&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        One row per circuit, keyed by &#39;component_id&#39;. Carries its members</span>
+<span class="sd">        (&#39;strands&#39;, &#39;n_strands&#39;), what it reaches (&#39;terminals&#39;, &#39;tap&#39;,</span>
+<span class="sd">        &#39;junctions&#39;, and their counts), a &#39;voltage&#39; where its members agree,</span>
+<span class="sd">        and the &#39;is_stub&#39; / &#39;mixed_voltage&#39; diagnostics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">members</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">strands</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">]))</span>
+
+    <span class="n">voltage</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">strands</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">],</span> <span class="n">strands</span><span class="p">[</span><span class="s1">&#39;voltage&#39;</span><span class="p">]))</span> \
+        <span class="k">if</span> <span class="s1">&#39;voltage&#39;</span> <span class="ow">in</span> <span class="n">strands</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="p">{}</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">strand_links</span><span class="p">)</span>
+
+    <span class="c1"># Strands meeting at a branching junction are conductively joined in a star fashion, not a clique</span>
+    <span class="n">by_junction</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">strand_id</span><span class="p">,</span> <span class="n">junction_id</span> <span class="ow">in</span> <span class="n">tap_incidence</span><span class="p">:</span>
+        <span class="n">by_junction</span><span class="p">[</span><span class="n">junction_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">strand_id</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">grouped</span> <span class="ow">in</span> <span class="n">by_junction</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">anchor</span> <span class="o">=</span> <span class="n">grouped</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">links</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">anchor</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="c1"># Group lines into circuits using _union_find()</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">_union_find</span><span class="p">(</span><span class="n">members</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">links</span><span class="p">))</span>
+
+    <span class="n">comp_strands</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">strand_id</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+        <span class="n">comp_strands</span><span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="n">strand_id</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">strand_id</span><span class="p">)</span>
+
+    <span class="c1"># Substations reached by each circuit</span>
+    <span class="n">comp_substations</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">strand_id</span><span class="p">,</span> <span class="n">substation_id</span> <span class="ow">in</span> <span class="n">substation_incidence</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">strand_id</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="n">comp_substations</span><span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="n">strand_id</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">substation_id</span><span class="p">))</span>
+
+    <span class="n">comp_junctions</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">strand_id</span><span class="p">,</span> <span class="n">junction_id</span> <span class="ow">in</span> <span class="n">tap_incidence</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">strand_id</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="n">comp_junctions</span><span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="n">strand_id</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">junction_id</span><span class="p">)</span>
+
+    <span class="c1"># Tap Identification</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">component_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">comp_strands</span><span class="p">):</span>
+        <span class="n">members_here</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">comp_strands</span><span class="p">[</span><span class="n">component_id</span><span class="p">])</span>
+        <span class="n">substations</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">comp_substations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="p">())))</span>
+        <span class="n">voltages</span> <span class="o">=</span> <span class="p">{</span><span class="n">voltage</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">members_here</span><span class="p">}</span>
+        <span class="n">volt</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">voltages</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">voltages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># A circuit joining three or more substations is represented as a tap with the following ID</span>
+        <span class="n">tap_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">_TAP_PREFIX</span><span class="si">}{</span><span class="n">component_id</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">substations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">terminals</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s1">&#39;substation&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substations</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">([(</span><span class="s1">&#39;tap&#39;</span><span class="p">,</span> <span class="n">tap_id</span><span class="p">)]</span> <span class="k">if</span> <span class="n">tap_id</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+
+        <span class="c1">#TODO: Make this dynamic so people can add their own features specific to their work, within the engine itself :)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;component_id&#39;</span><span class="p">:</span> <span class="n">component_id</span><span class="p">,</span>
+            <span class="s1">&#39;voltage&#39;</span><span class="p">:</span> <span class="n">volt</span><span class="p">,</span>
+            <span class="s1">&#39;n_strands&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">members_here</span><span class="p">),</span>
+            <span class="s1">&#39;strands&#39;</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">members_here</span><span class="p">),</span>
+            <span class="s1">&#39;terminals&#39;</span><span class="p">:</span> <span class="n">terminals</span><span class="p">,</span>
+            <span class="s1">&#39;tap&#39;</span><span class="p">:</span> <span class="n">tap_id</span><span class="p">,</span>
+            <span class="s1">&#39;junctions&#39;</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">comp_junctions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="p">()))),</span>
+            <span class="s1">&#39;n_terminals&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">terminals</span><span class="p">),</span>
+            <span class="s1">&#39;n_substations&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">substations</span><span class="p">),</span>
+            <span class="s1">&#39;n_taps&#39;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">tap_id</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="c1"># Diagnostics columns used for downstream reporting</span>
+            <span class="s1">&#39;is_stub&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">substations</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;mixed_voltage&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">voltages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+        <span class="s1">&#39;component_id&#39;</span><span class="p">,</span> <span class="s1">&#39;voltage&#39;</span><span class="p">,</span> <span class="s1">&#39;n_strands&#39;</span><span class="p">,</span> <span class="s1">&#39;strands&#39;</span><span class="p">,</span> <span class="s1">&#39;terminals&#39;</span><span class="p">,</span> <span class="s1">&#39;tap&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;junctions&#39;</span><span class="p">,</span> <span class="s1">&#39;n_terminals&#39;</span><span class="p">,</span> <span class="s1">&#39;n_substations&#39;</span><span class="p">,</span> <span class="s1">&#39;n_taps&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;is_stub&#39;</span><span class="p">,</span> <span class="s1">&#39;mixed_voltage&#39;</span><span class="p">,</span>
+    <span class="p">])</span></div>
+
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_circuit_substation_adjacency</span><span class="p">(</span><span class="n">substation_string_adjacency</span><span class="p">,</span> <span class="n">strings</span><span class="p">,</span> <span class="n">strand_links</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deprecated: replaced by build_circuit_terminals.</span>
+
+<span class="sd">    Kept so existing notebooks keep running. Discards taps and collapses</span>
+<span class="sd">    parallel circuits, which is why the graph builder no longer uses it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#strand_links, _ = partition_adjacency(string_string_adjacency)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">_union_find</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">strings</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">])),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">strand_links</span><span class="p">))</span>
+
+    <span class="n">circuit_substation_adjacency</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">strand</span><span class="p">,</span> <span class="n">substation</span> <span class="ow">in</span> <span class="n">substation_string_adjacency</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">strand</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="n">circuit_substation_adjacency</span><span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="n">strand</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">substation</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">circuit_substation_adjacency</span>
+
+
+
+<div class="viewcode-block" id="build_strings">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.build_strings">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_strings</span><span class="p">(</span><span class="n">line_df</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to explode transmission corridors, of single voltage, into individual lines based on circuit count.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line_df : gpd.GeoDataFrame</span>
+<span class="sd">        Single-voltage corridors from &#39;voltage_splitting()&#39;, requiring &#39;id&#39; and</span>
+<span class="sd">        &#39;counts&#39;. Rows whose count is missing or below 1 are reported as a</span>
+<span class="sd">        warning and contribute no strands.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gpd.GeoDataFrame</span>
+<span class="sd">        The input repeated once per circuit, with &#39;strand_seq&#39; numbering the</span>
+<span class="sd">        lanes within each corridor and &#39;strand_id&#39; identifying each strand as</span>
+<span class="sd">        &#39;{id}_s{strand_seq}&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">line_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Line </span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span><span class="si">}</span><span class="s2"> has invalid counts (</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">, type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+
+    <span class="n">strings</span> <span class="o">=</span> <span class="n">line_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">line_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">line_df</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">])]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">strings</span><span class="p">[</span><span class="s1">&#39;strand_seq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strings</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
+    <span class="n">strings</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strings</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_s&#39;</span> <span class="o">+</span> <span class="n">strings</span><span class="p">[</span><span class="s1">&#39;strand_seq&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">strings</span> <span class="o">=</span> <span class="n">strings</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">strings</span></div>
+
+
+
+
+<div class="viewcode-block" id="build_touches">
+<a class="viewcode-back" href="../../../../topology.html#grid_engine.topology.build_touches">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_touches</span><span class="p">(</span><span class="n">strings</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record every node each strand terminates at, one row per contact.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strings : gpd.GeoDataFrame</span>
+<span class="sd">        Exploded strands from &#39;build_strings()&#39;, requiring &#39;strand_id&#39;, &#39;id&#39;,</span>
+<span class="sd">        &#39;strand_seq&#39;, and &#39;node_refs&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        One row per strand endpoint with &#39;strand_id&#39;, &#39;id&#39;, &#39;strand_seq&#39;, and</span>
+<span class="sd">        &#39;node&#39;. A closed strand contributes one row, not two.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">start_node</span> <span class="o">=</span> <span class="n">strings</span><span class="p">[[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;strand_seq&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">node</span><span class="o">=</span><span class="n">strings</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">end_node</span> <span class="o">=</span> <span class="n">strings</span><span class="p">[[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;strand_seq&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">node</span><span class="o">=</span><span class="n">strings</span><span class="p">[</span><span class="s1">&#39;node_refs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">touches</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">start_node</span><span class="p">,</span> <span class="n">end_node</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">touches</span> <span class="o">=</span> <span class="n">touches</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;strand_id&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">touches</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Shawn-Patrick Barhorst.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

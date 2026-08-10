@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>graph module &mdash; Grid Engine 0.1.0 documentation</title>
+  <title>toy_data module &mdash; Grid Engine 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
@@ -19,8 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="toy_data module" href="toy_data.html" />
-    <link rel="prev" title="ingestion module" href="ingestion.html" /> 
+    <link rel="prev" title="graph module" href="graph.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,11 +48,11 @@
 <li class="toctree-l2"><a class="reference internal" href="cleaning.html">cleaning module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology.html">topology module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ingestion.html">ingestion module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">graph module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#grid_engine.graph.build_networkx_graph"><code class="docutils literal notranslate"><span class="pre">build_networkx_graph()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph.html">graph module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">toy_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grid_engine.toy_data.build_toy_data"><code class="docutils literal notranslate"><span class="pre">build_toy_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="toy_data.html">toy_data module</a></li>
 </ul>
 </li>
 </ul>
@@ -73,9 +72,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">grid_engine</a></li>
-      <li class="breadcrumb-item active">graph module</li>
+      <li class="breadcrumb-item active">toy_data module</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/graph.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/toy_data.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -83,29 +82,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-grid_engine.graph">
-<span id="graph-module"></span><h1>graph module<a class="headerlink" href="#module-grid_engine.graph" title="Link to this heading"></a></h1>
-<p>Public API gateway for graph functions.</p>
+  <section id="module-grid_engine.toy_data">
+<span id="toy-data-module"></span><h1>toy_data module<a class="headerlink" href="#module-grid_engine.toy_data" title="Link to this heading"></a></h1>
+<p>Public API Gateway for toy data functions.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="grid_engine.graph.build_networkx_graph">
-<span class="sig-prename descclassname"><span class="pre">grid_engine.graph.</span></span><span class="sig-name descname"><span class="pre">build_networkx_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuit_terminals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substation_attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tap_attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">networkx.MultiGraph</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/graph.html#build_networkx_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.graph.build_networkx_graph" title="Link to this definition"></a></dt>
-<dd><p>Renders circuit terminals into a NetworkX MultiGraph modeling electrical connectivity.</p>
-<p>Direct edges connect 2-substation circuits; circuits with 3+ substations
-use a central tap node. Components with &lt;2 substations are logged in
-<code class="docutils literal notranslate"><span class="pre">G.graph['dropped_components']</span></code>.</p>
+<dt class="sig sig-object py" id="grid_engine.toy_data.build_toy_data">
+<span class="sig-prename descclassname"><span class="pre">grid_engine.toy_data.</span></span><span class="sig-name descname"><span class="pre">build_toy_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yaml_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="_modules/grid_engine/backends/local/toy_data.html#build_toy_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grid_engine.toy_data.build_toy_data" title="Link to this definition"></a></dt>
+<dd><p>Builds a hand-written test network from YAML, mimicking OSM ingestion output.</p>
+<p>Lets topology scenarios - taps, splices, parallel circuits - be written by
+hand and reasoned about, rather than hunted for in real OSM extracts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>circuit_terminals</strong> (<em>pandas.DataFrame</em>) – Circuit records containing ‘component_id’, ‘terminals’, and optional ‘tap’.</p></li>
-<li><p><strong>substation_attrs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Extra attributes keyed by substation ID, by default {}</p></li>
-<li><p><strong>tap_attrs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Extra attributes keyed by tap ID, by default {}</p></li>
-</ul>
+<dd class="field-odd"><p><strong>yaml_path</strong> (<em>str</em>) – Path to a fixture with two top-level keys. ‘substations’ entries carry
+‘id’, ‘name’, ‘type’, ‘voltage’, ‘coords’, and ‘node_refs’; ‘powerlines’
+entries carry those minus ‘coords’, plus ‘counts’ and a ‘geometry’
+mapping holding its own ‘coords’. Coordinates are ‘(lon, lat)’ strings.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Graph with ‘substation’ and ‘tap’ nodes connected by circuit edges.</p>
+<dd class="field-even"><p>Substations and powerlines in one frame, with ‘coords’ parsed to
+(lon, lat) tuples and ‘geometry’ built as Polygons and LineStrings
+respectively. No CRS is set.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>networkx.MultiGraph</p>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
 </dd>
 </dl>
 </dd></dl>
@@ -116,8 +115,7 @@ use a central tap node. Components with &lt;2 substations are logged in
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="ingestion.html" class="btn btn-neutral float-left" title="ingestion module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="toy_data.html" class="btn btn-neutral float-right" title="toy_data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="graph.html" class="btn btn-neutral float-left" title="graph module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

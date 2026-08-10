@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>gridrisk &mdash; GridRisk 0.1.0 documentation</title>
+  <title>grid_engine &mdash; Grid Engine 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
@@ -19,8 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="db package" href="db.html" />
-    <link rel="prev" title="GridRisk documentation" href="index.html" /> 
+    <link rel="next" title="engine module" href="engine.html" />
+    <link rel="prev" title="Grid Engine documentation" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            GridRisk
+            Grid Engine
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -44,11 +44,13 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">gridrisk</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="db.html">db package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html">graph package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html">ingestion package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="risk.html">risk package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">grid_engine</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="engine.html">engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleaning.html">cleaning module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html">topology module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ingestion.html">ingestion module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph.html">graph module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="toy_data.html">toy_data module</a></li>
 </ul>
 </li>
 </ul>
@@ -59,7 +61,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">GridRisk</a>
+          <a href="index.html">Grid Engine</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -67,7 +69,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">gridrisk</li>
+      <li class="breadcrumb-item active">grid_engine</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -77,76 +79,50 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gridrisk">
-<h1>gridrisk<a class="headerlink" href="#gridrisk" title="Link to this heading"></a></h1>
+  <section id="grid-engine">
+<h1>grid_engine<a class="headerlink" href="#grid-engine" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="db.html">db package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="db.html#module-db">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="graph.html">graph package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="graph.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html#module-graph.collapse">graph.collapse module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html#module-graph.gdf_to_graph">graph.gdf_to_graph module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="graph.html#graph.gdf_to_graph.build_graph_from_gdf"><code class="docutils literal notranslate"><span class="pre">build_graph_from_gdf()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html#module-graph.osm_to_graph">graph.osm_to_graph module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="graph.html#module-graph">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ingestion.html">ingestion package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion.build_toy_data">ingestion.build_toy_data module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.build_toy_data.build_toy_data"><code class="docutils literal notranslate"><span class="pre">build_toy_data()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion.cleaning">ingestion.cleaning module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.cleaning.clean_voltages"><code class="docutils literal notranslate"><span class="pre">clean_voltages()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.cleaning.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.cleaning.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.cleaning.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion.filter_voltages">ingestion.filter_voltages module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.filter_voltages.filter_voltages"><code class="docutils literal notranslate"><span class="pre">filter_voltages()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.filter_voltages.parse_min_voltage"><code class="docutils literal notranslate"><span class="pre">parse_min_voltage()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion.handler_to_geodataframe">ingestion.handler_to_geodataframe module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.handler_to_geodataframe.nodes_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">nodes_to_geodataframe()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.handler_to_geodataframe.ways_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">ways_to_geodataframe()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion.osm_handler">ingestion.osm_handler module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.osm_handler.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.osm_handler.PowerHandler.nodes"><code class="docutils literal notranslate"><span class="pre">PowerHandler.nodes</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.osm_handler.PowerHandler.ways"><code class="docutils literal notranslate"><span class="pre">PowerHandler.ways</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.osm_handler.PowerHandler.node"><code class="docutils literal notranslate"><span class="pre">PowerHandler.node()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.osm_handler.PowerHandler.way"><code class="docutils literal notranslate"><span class="pre">PowerHandler.way()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">engine module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="engine.html#grid_engine.engine.GridEngine"><code class="docutils literal notranslate"><span class="pre">GridEngine</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="engine.html#grid_engine.engine.GridEngine.run"><code class="docutils literal notranslate"><span class="pre">GridEngine.run()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="ingestion.html#module-ingestion">Module contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.PowerHandler.nodes"><code class="docutils literal notranslate"><span class="pre">PowerHandler.nodes</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.PowerHandler.ways"><code class="docutils literal notranslate"><span class="pre">PowerHandler.ways</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.PowerHandler.node"><code class="docutils literal notranslate"><span class="pre">PowerHandler.node()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="ingestion.html#ingestion.PowerHandler.way"><code class="docutils literal notranslate"><span class="pre">PowerHandler.way()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="cleaning.html">cleaning module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cleaning.html#grid_engine.cleaning.clean_voltages"><code class="docutils literal notranslate"><span class="pre">clean_voltages()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleaning.html#grid_engine.cleaning.propagate_circuit_counts"><code class="docutils literal notranslate"><span class="pre">propagate_circuit_counts()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.clean_voltages"><code class="docutils literal notranslate"><span class="pre">clean_voltages()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="ingestion.html#ingestion.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">topology module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.build_circuit_terminals"><code class="docutils literal notranslate"><span class="pre">build_circuit_terminals()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.build_string_adjacency_list"><code class="docutils literal notranslate"><span class="pre">build_string_adjacency_list()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.build_strings"><code class="docutils literal notranslate"><span class="pre">build_strings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.build_touches"><code class="docutils literal notranslate"><span class="pre">build_touches()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.extract_line_substation_connections"><code class="docutils literal notranslate"><span class="pre">extract_line_substation_connections()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.get_line_vector"><code class="docutils literal notranslate"><span class="pre">get_line_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.get_node_df"><code class="docutils literal notranslate"><span class="pre">get_node_df()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.segment_ways_at_nodes"><code class="docutils literal notranslate"><span class="pre">segment_ways_at_nodes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html#grid_engine.topology.voltage_splitting"><code class="docutils literal notranslate"><span class="pre">voltage_splitting()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="ingestion.html">ingestion module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ingestion.html#grid_engine.ingestion.PowerHandler"><code class="docutils literal notranslate"><span class="pre">PowerHandler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ingestion.html#grid_engine.ingestion.PowerHandler.nodes"><code class="docutils literal notranslate"><span class="pre">PowerHandler.nodes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ingestion.html#grid_engine.ingestion.PowerHandler.ways"><code class="docutils literal notranslate"><span class="pre">PowerHandler.ways</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="risk.html">risk package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="risk.html#module-risk">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ingestion.html#grid_engine.ingestion.nodes_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">nodes_to_geodataframe()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="ingestion.html#grid_engine.ingestion.ways_to_geodataframe"><code class="docutils literal notranslate"><span class="pre">ways_to_geodataframe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">graph module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graph.html#grid_engine.graph.build_networkx_graph"><code class="docutils literal notranslate"><span class="pre">build_networkx_graph()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toy_data.html">toy_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="toy_data.html#grid_engine.toy_data.build_toy_data"><code class="docutils literal notranslate"><span class="pre">build_toy_data()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -157,8 +133,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="GridRisk documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="db.html" class="btn btn-neutral float-right" title="db package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Grid Engine documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="engine.html" class="btn btn-neutral float-right" title="engine module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

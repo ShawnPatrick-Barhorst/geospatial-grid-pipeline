@@ -1,9 +1,9 @@
-.. GridRisk documentation master file, created by
+.. Grid Engine documentation master file, created by
    sphinx-quickstart on Thu Jun  4 18:46:25 2026.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-GridRisk documentation
+Grid Engine documentation
 ======================
 
 Add your content using ``reStructuredText`` syntax. See the
